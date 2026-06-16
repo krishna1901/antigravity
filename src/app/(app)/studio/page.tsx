@@ -53,17 +53,17 @@ export default function StudioPage() {
       <div className="grid gap-4 md:grid-cols-3">
         {tools.map((tool) => (
           <Dialog key={tool.id}>
-            <DialogTrigger asChild>
+            <DialogTrigger render={
               <Card className="bg-white/80 backdrop-blur-sm border-slate-200/60 shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-md cursor-pointer" onClick={() => { setActiveTool(tool.id); setResult(""); setPrompt(""); }}>
                 <CardContent className="p-6">
                   <div className={`h-12 w-12 rounded-xl bg-gradient-to-br ${tool.color} flex items-center justify-center mb-4 shadow-sm`}>
                     <tool.icon className="h-6 w-6 text-white" />
                   </div>
-                  <h3 className="font-semibold text-lg text-slate-900 mb-1">{tool.title}</h3>
+                  <h3 className="font-semibold text-slate-900 mb-1">{tool.title}</h3>
                   <p className="text-sm text-slate-500">{tool.desc}</p>
                 </CardContent>
               </Card>
-            </DialogTrigger>
+            } />
             <DialogContent className="sm:max-w-[600px]">
               <DialogHeader>
                 <DialogTitle className="flex items-center gap-2">

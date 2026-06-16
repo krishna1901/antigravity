@@ -7,9 +7,13 @@ interface StatCardProps {
   description?: string;
   icon?: React.ReactNode;
   className?: string;
+  trend?: {
+    value: string;
+    isPositive: boolean;
+  };
 }
 
-export function StatCard({ title, value, description, icon, className }: StatCardProps) {
+export function StatCard({ title, value, description, icon, className, trend }: StatCardProps) {
   return (
     <Card className={cn("bg-white/80 backdrop-blur-md border-white shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1 group relative overflow-hidden", className)}>
       <div className="absolute inset-0 bg-gradient-to-br from-white/40 to-white/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
@@ -23,7 +27,17 @@ export function StatCard({ title, value, description, icon, className }: StatCar
           )}
         </div>
         <div className="flex flex-col gap-1">
-          <div className="text-3xl font-bold text-slate-900 tracking-tight">{value}</div>
+          <div className="flex items-baseline gap-2">
+            <div className="text-3xl font-bold text-slate-900 tracking-tight">{value}</div>
+            {trend && (
+              <span className={cn(
+                "px-2 py-0.5 rounded-full text-xs font-semibold",
+                trend.isPositive ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-700"
+              )}>
+                {trend.value}
+              </span>
+            )}
+          </div>
           {description && (
             <p className="text-xs text-slate-500 font-medium">{description}</p>
           )}

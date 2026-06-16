@@ -37,6 +37,30 @@ const analyticNavItems = [
   { title: "Automations", href: "/automations", icon: Bot },
 ];
 
+const NavGroup = ({ items, title, pathname }: { items: typeof mainNavItems, title?: string, pathname: string }) => (
+  <div className="space-y-1 mt-6 first:mt-0">
+    {title && <h4 className="px-4 text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">{title}</h4>}
+    {items.map((item) => {
+      const isActive = pathname.startsWith(item.href);
+      return (
+        <Link
+          key={item.href}
+          href={item.href}
+          className={cn(
+            "flex items-center gap-3 rounded-lg px-4 py-2.5 text-sm font-medium transition-colors",
+            isActive 
+              ? "bg-orange-50 text-orange-600" 
+              : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+          )}
+        >
+          <item.icon className={cn("h-4 w-4", isActive ? "text-orange-500" : "text-slate-400")} />
+          {item.title}
+        </Link>
+      );
+    })}
+  </div>
+);
+
 export function Sidebar() {
   const pathname = usePathname();
 
@@ -45,30 +69,6 @@ export function Sidebar() {
     await supabase.auth.signOut();
     window.location.href = "/login";
   };
-
-  const NavGroup = ({ items, title }: { items: typeof mainNavItems, title?: string }) => (
-    <div className="space-y-1 mt-6 first:mt-0">
-      {title && <h4 className="px-4 text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">{title}</h4>}
-      {items.map((item) => {
-        const isActive = pathname.startsWith(item.href);
-        return (
-          <Link
-            key={item.href}
-            href={item.href}
-            className={cn(
-              "flex items-center gap-3 rounded-lg px-4 py-2.5 text-sm font-medium transition-colors",
-              isActive 
-                ? "bg-orange-50 text-orange-600" 
-                : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
-            )}
-          >
-            <item.icon className={cn("h-4 w-4", isActive ? "text-orange-500" : "text-slate-400")} />
-            {item.title}
-          </Link>
-        );
-      })}
-    </div>
-  );
 
   return (
     <div className="flex h-screen w-64 flex-col border-r border-slate-200 bg-white">
@@ -82,8 +82,8 @@ export function Sidebar() {
       </div>
 
       <div className="flex-1 overflow-y-auto px-3 py-2 space-y-6 scrollbar-hide">
-        <NavGroup items={mainNavItems} title="Create" />
-        <NavGroup items={analyticNavItems} title="Listen & Grow" />
+        <NavGroup items={mainNavItems} title="Create" pathname={pathname} />
+        <NavGroup items={analyticNavItems} title="Listen & Grow" pathname={pathname} />
       </div>
 
       <div className="p-4 border-t border-slate-100">

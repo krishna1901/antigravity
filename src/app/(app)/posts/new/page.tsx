@@ -174,7 +174,7 @@ export default function NewPostPage() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="postType">Format</Label>
-                  <Select value={postType} onValueChange={setPostType}>
+                  <Select value={postType} onValueChange={(val) => setPostType(val || "")}>
                     <SelectTrigger id="postType">
                       <SelectValue placeholder="Select format" />
                     </SelectTrigger>

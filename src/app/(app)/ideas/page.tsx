@@ -14,7 +14,7 @@ import { getIdeas, createIdea, deleteIdea, updateIdeaStatus } from "@/app/action
 import { Plus, Loader2, Trash2, Search, Lightbulb } from "lucide-react";
 
 export default function IdeasPage() {
-  const [ideas, setIdeas] = useState<any[]>([]);
+  const [ideas, setIdeas] = useState<any[]>([]); // eslint-disable-line @typescript-eslint/no-explicit-any
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
@@ -24,7 +24,7 @@ export default function IdeasPage() {
     fetchIdeas();
   }, []);
 
-  const fetchIdeas = async () => {
+  async function fetchIdeas() {
     setLoading(true);
     const data = await getIdeas();
     setIdeas(data);
@@ -67,11 +67,11 @@ export default function IdeasPage() {
         />
         
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
-          <DialogTrigger asChild>
+          <DialogTrigger render={
             <Button className="bg-slate-900 text-white hover:bg-slate-800 shadow-md">
               <Plus className="mr-2 h-4 w-4" /> Add Idea
             </Button>
-          </DialogTrigger>
+          } />
           <DialogContent>
             <form onSubmit={handleCreate}>
               <DialogHeader>

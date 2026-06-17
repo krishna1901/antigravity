@@ -253,9 +253,24 @@
   animation: pop 0.25s ease-out both;
 }
 
+/* Bar chart grow-in reveal */
+@keyframes grow-y {
+  from {
+    transform: scaleY(0);
+  }
+  to {
+    transform: scaleY(1);
+  }
+}
+.chart-bar {
+  transform-origin: bottom;
+  animation: grow-y 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .animate-rise,
-  .animate-pop {
+  .animate-pop,
+  .chart-bar {
     animation: none;
   }
   .animate-shimmer::after {

@@ -1,3 +1,6 @@
+"use client";
+
+import { useMemo, useState } from "react";
 import {
   Plus,
   Users,
@@ -8,6 +11,8 @@ import {
   Quote,
   Heart,
   Lightbulb,
+  Search,
+  SearchX,
 } from "lucide-react";
 import { PageHeader } from "@/components/ui/page-header";
 import { SectionHeader } from "@/components/ui/section-header";
@@ -15,6 +20,8 @@ import { StatCard } from "@/components/ui/stat-card";
 import { CompetitorCard } from "@/components/ui/competitor-card";
 import { ContentTypeBadge } from "@/components/ui/content-type-badge";
 import { InsightCard } from "@/components/ui/insight-card";
+import { SelectField } from "@/components/ui/select-field";
+import { EmptyState } from "@/components/ui/empty-state";
 import { Button } from "@/components/ui/button";
 import { competitors, competitorPosts } from "@/lib/demo-data";
 
@@ -23,6 +30,13 @@ const statAccents: Record<string, { icon: React.ReactNode; accent: string }> = {
   cadence: { icon: <CalendarRange className="h-4 w-4" />, accent: "from-sky-500 to-blue-500" },
   niche: { icon: <Layers className="h-4 w-4" />, accent: "from-violet-500 to-indigo-500" },
   gaps: { icon: <Target className="h-4 w-4" />, accent: "from-amber-400 to-orange-500" },
+};
+
+const platformLabels: Record<string, string> = {
+  instagram: "Instagram",
+  linkedin: "LinkedIn",
+  x: "X (Twitter)",
+  youtube: "YouTube",
 };
 
 // AI-detected content-gap suggestions (placeholder — defined inline).
@@ -57,6 +71,10 @@ const contentGaps: {
 ];
 
 export default function CompetitorsPage() {
+  const [query, setQuery] = useState("");
+  const [niche, setNiche] = useState("all");
+  const [platform, setPlatform] = useState("all");
+
   const avgPostsPerWeek = Math.round(
     competitors.reduce((sum, c) => sum + c.postsPerWeek, 0) / competitors.length
   );
@@ -68,15 +86,57 @@ export default function CompetitorsPage() {
   }, {});
   const topNiche = Object.entries(nicheCounts).sort((a, b) => b[1] - a[1])[0]?.[0] ?? "—";
 
+  const nicheOptions = useMemo(
+    () => [
+      { value: "all", label: "All niches" },
+      ...Array.from(new Set(competitors.map((c) => c.niche))).map((n) => ({ value: n, label: n })),
+    ],
+    []
+  );
+
+  const platformOptions = useMemo(
+    () => [
+      { value: "all", label: "All platforms" },
+      ...Array.from(new Set(competitors.map((c) => c.platform))).map((p) => ({
+        value: p,
+        label: platformLabels[p] ?? p,
+      })),
+    ],
+    []
+  );
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return competitors.filter((c) => {
+      if (niche !== "all" && c.niche !== niche) return false;
+      if (platform !== "all" && c.platform !== platform) return false;
+      if (q && !`${c.name} ${c.handle} ${c.niche}`.toLowerCase().includes(q)) return false;
+      return true;
+    });
+  }, [query, niche, platform]);
+
+  const resetFilters = () => {
+    setQuery("");
+    setNiche("all");
+    setPlatform("all");
+  };
+
   return (
     <div className="space-y-8">
       <PageHeader
+        eyebrow="Competitor intelligence"
         title="Competitor Tracking"
         description="Benchmark rivals, study their best content, and find gaps."
+        icon={<Target className="h-5 w-5" />}
         actions={
-          <Button className="bg-gradient-to-r from-brand-500 to-coral-500 text-white shadow-sm shadow-brand-500/20 hover:opacity-95">
-            <Plus className="h-4 w-4" /> Add competitor
-          </Button>
+          <>
+            <span className="hidden items-center gap-1.5 rounded-full border border-brand-200 bg-brand-50 px-2.5 py-1 text-xs font-semibold text-brand-700 sm:inline-flex">
+              <Sparkles className="h-3.5 w-3.5" /> 5 gaps found
+            </span>
+            <Button className="bg-gradient-to-r from-brand-500 to-coral-500 text-white shadow-sm shadow-brand-500/20 hover:opacity-95">
+              <Plus className="h-4 w-4" /> Add competitor
+            </Button>
+          </>
         }
       />
 
@@ -130,11 +190,61 @@ export default function CompetitorsPage() {
             </Button>
           }
         />
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {competitors.map((c) => (
-            <CompetitorCard key={c.id} competitor={c} />
-          ))}
+
+        {/* Filter bar */}
+        <div className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-3 shadow-soft sm:flex-row sm:items-center">
+          <div className="relative flex-1">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <input
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search competitors by name, handle or niche…"
+              className="h-9 w-full rounded-lg border border-input bg-card pl-9 pr-3 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/40"
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <SelectField
+              options={nicheOptions}
+              value={niche}
+              onChange={(e) => setNiche(e.target.value)}
+              className="w-full sm:w-44"
+            />
+            <SelectField
+              options={platformOptions}
+              value={platform}
+              onChange={(e) => setPlatform(e.target.value)}
+              className="w-full sm:w-44"
+            />
+          </div>
         </div>
+
+        {filtered.length === 0 ? (
+          <EmptyState
+            icon={<SearchX className="h-6 w-6" />}
+            title="No competitors match your filters"
+            description="No tracked profiles fit this niche, platform or search. Clear the filters to see everyone — or add a new rival to benchmark against."
+            action={
+              <div className="flex flex-wrap items-center justify-center gap-2">
+                <Button variant="outline" size="sm" onClick={resetFilters}>
+                  Clear filters
+                </Button>
+                <Button
+                  size="sm"
+                  className="bg-gradient-to-r from-brand-500 to-coral-500 text-white shadow-sm shadow-brand-500/20 hover:opacity-95"
+                >
+                  <Plus className="h-4 w-4" /> Add competitor
+                </Button>
+              </div>
+            }
+          />
+        ) : (
+          <div className="grid items-stretch gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {filtered.map((c) => (
+              <CompetitorCard key={c.id} competitor={c} className="h-full" />
+            ))}
+          </div>
+        )}
       </section>
 
       {/* Top competitor posts — hook & format analysis */}
@@ -144,11 +254,11 @@ export default function CompetitorsPage() {
           description="Hook & format breakdown of their best-performing posts"
           icon={<Sparkles className="h-4 w-4" />}
         />
-        <div className="grid gap-4 lg:grid-cols-3">
+        <div className="grid items-stretch gap-4 lg:grid-cols-3">
           {competitorPosts.map((p) => (
             <article
               key={p.id}
-              className="group flex flex-col gap-4 rounded-2xl border border-border bg-card p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
+              className="group flex h-full flex-col gap-4 rounded-2xl border border-border bg-card p-5 shadow-soft transition-all duration-300 hover:-translate-y-0.5 hover:shadow-elevated hover:ring-1 hover:ring-brand-200/70"
             >
               <div className="flex items-center justify-between gap-3">
                 <span className="text-sm font-semibold text-foreground">{p.competitor}</span>
@@ -166,7 +276,7 @@ export default function CompetitorsPage() {
                 </p>
               </div>
 
-              <div className="mt-auto flex items-center justify-between gap-2 border-t border-border pt-3">
+              <div className="flex items-center justify-between gap-2 border-t border-border pt-3">
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">
                   <Heart className="h-3.5 w-3.5" /> {p.engagement} eng.
                 </span>
@@ -174,7 +284,7 @@ export default function CompetitorsPage() {
               </div>
 
               {/* Why it works — note / analysis */}
-              <div className="flex items-start gap-2 rounded-xl bg-muted/50 p-3">
+              <div className="mt-auto flex items-start gap-2 rounded-xl bg-muted/50 p-3">
                 <Lightbulb className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-500" />
                 <div>
                   <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
@@ -200,7 +310,7 @@ export default function CompetitorsPage() {
             </span>
           }
         />
-        <div className="grid gap-4 lg:grid-cols-3">
+        <div className="grid items-stretch gap-4 lg:grid-cols-3">
           {contentGaps.map((g) => (
             <InsightCard
               key={g.id}
@@ -209,6 +319,7 @@ export default function CompetitorsPage() {
               tone={g.tone}
               impact={g.impact}
               icon={<Sparkles className="h-4 w-4" />}
+              className="h-full"
               action={
                 <Button variant="outline" size="sm">
                   Create from gap

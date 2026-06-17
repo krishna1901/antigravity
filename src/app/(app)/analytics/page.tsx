@@ -1,6 +1,6 @@
 "use client";
 
-import { Download, CalendarCheck, Rocket, LayoutGrid } from "lucide-react";
+import { BarChart3, Download, CalendarCheck, Rocket, LayoutGrid } from "lucide-react";
 import { StatCard } from "@/components/ui/stat-card";
 import { ChartCard } from "@/components/ui/chart-card";
 import { InsightCard } from "@/components/ui/insight-card";
@@ -32,6 +32,18 @@ const metricSparks: Record<string, number[]> = {
   saves: [4, 5, 5, 7, 9, 8, 11, 13],
 };
 
+// Short secondary context per metric — keeps the row from feeling empty.
+const metricHints: Record<string, string> = {
+  reach: "Accounts reached",
+  impressions: "Total views",
+  engagement: "Likes, comments & saves",
+  saves: "Bookmarked posts",
+  shares: "Reposts & shares",
+  comments: "Replies received",
+  clicks: "Outbound link taps",
+  followers: "vs. last period",
+};
+
 // Heatmap hour columns (6 AM → 10 PM, every 2 hours).
 const HOURS = [6, 8, 10, 12, 14, 16, 18, 20, 22];
 
@@ -51,14 +63,17 @@ export default function AnalyticsPage() {
         eyebrow="Analytics"
         title="Performance"
         description="Track reach, engagement and growth across platforms."
+        icon={<BarChart3 className="h-5 w-5" />}
         actions={
           <>
             <SelectField
+              aria-label="Date range"
               options={["Last 7 days", "Last 30 days", "Last 90 days", "This year"]}
               defaultValue="Last 30 days"
-              className="w-40"
+              className="w-36"
             />
             <SelectField
+              aria-label="Platform"
               options={[
                 "All platforms",
                 { value: "instagram", label: "Instagram" },
@@ -68,9 +83,9 @@ export default function AnalyticsPage() {
                 { value: "x", label: "X" },
               ]}
               defaultValue="All platforms"
-              className="w-40"
+              className="w-36"
             />
-            <Button variant="ghost">
+            <Button variant="outline">
               <Download className="h-4 w-4" /> Export
             </Button>
           </>
@@ -78,7 +93,7 @@ export default function AnalyticsPage() {
       />
 
       {/* Headline metrics */}
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4">
+      <div className="grid animate-pop grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4">
         {analyticsMetrics.map((m) => (
           <StatCard
             key={m.key}
@@ -86,6 +101,7 @@ export default function AnalyticsPage() {
             value={m.value}
             delta={m.delta}
             positive={m.positive}
+            hint={metricHints[m.key]}
             spark={metricSparks[m.key]}
           />
         ))}
@@ -109,6 +125,7 @@ export default function AnalyticsPage() {
             valueFormatter={formatNumber}
             color="var(--chart-3)"
             height={240}
+            showYAxis
           />
         </ChartCard>
 
@@ -130,6 +147,7 @@ export default function AnalyticsPage() {
             valueFormatter={(n) => `${n}%`}
             color="var(--chart-1)"
             height={220}
+            showYAxis
           />
         </ChartCard>
 
@@ -137,6 +155,7 @@ export default function AnalyticsPage() {
           <BarChart
             data={contentTypePerformance}
             showValues
+            showAxis
             valueFormatter={(n) => `${n}%`}
             height={220}
             barClassName="from-violet-500 to-indigo-400 group-hover:from-violet-600 group-hover:to-indigo-500"
@@ -153,7 +172,7 @@ export default function AnalyticsPage() {
         >
           <div className="overflow-x-auto scrollbar-thin">
           <div className="min-w-[480px]">
-          <div className="grid grid-cols-[1.4fr_1fr_1.4fr_1fr] gap-3 border-b border-border px-5 py-2.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+          <div className="grid grid-cols-[1.4fr_1fr_1.6fr_1fr] gap-3 border-b border-border px-5 py-2.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
             <span>Platform</span>
             <span className="text-right">Reach</span>
             <span>Engagement</span>
@@ -163,19 +182,19 @@ export default function AnalyticsPage() {
             {platformComparison.map((p) => (
               <li
                 key={p.platform}
-                className="grid grid-cols-[1.4fr_1fr_1.4fr_1fr] items-center gap-3 px-5 py-3"
+                className="grid grid-cols-[1.4fr_1fr_1.6fr_1fr] items-center gap-3 px-5 py-3 transition-colors hover:bg-muted/40"
               >
                 <PlatformBadge platform={p.platform} />
-                <span className="text-right text-sm font-semibold text-foreground">
+                <span className="text-right text-sm font-semibold tabular-nums text-foreground">
                   {formatNumber(p.reach)}
                 </span>
-                <div className="flex items-center gap-2">
-                  <Progress value={p.engagement * 10} className="h-1.5" />
-                  <span className="w-10 shrink-0 text-xs font-semibold text-foreground">
+                <div className="flex items-center gap-2.5">
+                  <Progress value={p.engagement * 10} className="h-1.5 flex-1" />
+                  <span className="w-11 shrink-0 text-right text-xs font-semibold tabular-nums text-foreground">
                     {p.engagement}%
                   </span>
                 </div>
-                <span className="text-right text-sm font-medium text-muted-foreground">
+                <span className="text-right text-sm font-medium tabular-nums text-muted-foreground">
                   {p.followers}
                 </span>
               </li>
@@ -192,29 +211,38 @@ export default function AnalyticsPage() {
         >
           <ul className="divide-y divide-border">
             {analyticsTopPosts.map((post, i) => (
-              <li key={post.id} className="flex items-center gap-3 px-5 py-3">
-                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-muted text-xs font-bold text-muted-foreground">
+              <li
+                key={post.id}
+                className="flex items-center gap-3 px-5 py-3 transition-colors hover:bg-muted/40"
+              >
+                <span
+                  className={
+                    i < 3
+                      ? "flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-brand-500 to-coral-500 text-xs font-bold tabular-nums text-white shadow-sm"
+                      : "flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-muted text-xs font-bold tabular-nums text-muted-foreground"
+                  }
+                >
                   {i + 1}
                 </span>
                 <PlatformChip platform={post.platform} />
                 <p className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
                   {post.title}
                 </p>
-                <div className="hidden shrink-0 items-center gap-5 text-right sm:flex">
-                  <div>
-                    <p className="text-sm font-semibold text-foreground">{post.reach}</p>
+                <div className="hidden shrink-0 items-center gap-6 text-right sm:flex">
+                  <div className="w-14">
+                    <p className="text-sm font-semibold tabular-nums text-foreground">{post.reach}</p>
                     <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
                       Reach
                     </p>
                   </div>
-                  <div>
-                    <p className="text-sm font-semibold text-emerald-600">{post.engagement}</p>
+                  <div className="w-12">
+                    <p className="text-sm font-semibold tabular-nums text-emerald-600">{post.engagement}</p>
                     <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
                       Eng.
                     </p>
                   </div>
-                  <div>
-                    <p className="text-sm font-semibold text-foreground">{post.saves}</p>
+                  <div className="w-12">
+                    <p className="text-sm font-semibold tabular-nums text-foreground">{post.saves}</p>
                     <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
                       Saves
                     </p>
@@ -231,14 +259,15 @@ export default function AnalyticsPage() {
         title="Best posting times"
         subtitle="When your audience is most active (local time)"
         action={
-          <div className="flex items-center gap-2 text-[11px] font-medium text-muted-foreground">
-            Low
-            <span className="flex items-center gap-1">
-              <span className="h-3 w-3 rounded bg-brand-100" />
-              <span className="h-3 w-3 rounded bg-brand-300" />
-              <span className="h-3 w-3 rounded bg-brand-500" />
+          <div className="flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground">
+            <span>Quiet</span>
+            <span className="flex items-center gap-0.5">
+              <span className="h-3 w-3 rounded-[4px] bg-muted/60" />
+              <span className="h-3 w-3 rounded-[4px] bg-gradient-to-br from-brand-500 to-coral-500 opacity-50" />
+              <span className="h-3 w-3 rounded-[4px] bg-gradient-to-br from-brand-500 to-coral-500 opacity-75" />
+              <span className="h-3 w-3 rounded-[4px] bg-gradient-to-br from-brand-500 to-coral-500" />
             </span>
-            High
+            <span>Most active</span>
           </div>
         }
       >

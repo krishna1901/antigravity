@@ -65,7 +65,7 @@ export default function TrendsPage() {
       />
 
       {/* Stat row */}
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 animate-pop md:grid-cols-4">
         <StatCard
           label="Trends tracked"
           value={trends.length}
@@ -132,8 +132,9 @@ export default function TrendsPage() {
               {keywords.map((kw) => (
                 <span
                   key={kw}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-border bg-muted/40 py-1 pl-3 pr-1.5 text-sm font-medium text-foreground"
+                  className="group inline-flex items-center gap-1.5 rounded-full border border-border bg-muted/40 py-1 pl-3 pr-1.5 text-sm font-medium text-foreground transition-colors hover:border-brand-200 hover:bg-brand-50"
                 >
+                  <Tag className="h-3 w-3 text-muted-foreground group-hover:text-brand-500" />
                   {kw}
                   <button
                     type="button"
@@ -147,39 +148,46 @@ export default function TrendsPage() {
               ))}
             </div>
           ) : (
-            <p className="text-sm text-muted-foreground">
+            <div className="flex flex-wrap items-center gap-2 rounded-xl border border-dashed border-border bg-muted/20 px-4 py-3 text-sm text-muted-foreground">
+              <Tag className="h-4 w-4 shrink-0" />
               No keywords yet — add a term above to start tracking spikes.
-            </p>
+            </div>
           )}
         </div>
       </ChartCard>
 
       {/* Trends grid */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-end justify-between gap-2">
         <div>
           <h2 className="text-sm font-semibold text-foreground">
             {niche === "All niches" ? "All trends" : niche}
           </h2>
           <p className="text-xs text-muted-foreground">
             {filtered.length} trend{filtered.length === 1 ? "" : "s"} surfaced
+            {niche !== "All niches" && " in this niche"}
           </p>
         </div>
+        {niche !== "All niches" && (
+          <Button variant="ghost" size="sm" onClick={() => setNiche("All niches")}>
+            <X className="h-3.5 w-3.5" /> Clear filter
+          </Button>
+        )}
       </div>
 
       {filtered.length > 0 ? (
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <div className="grid auto-rows-fr gap-4 md:grid-cols-2 xl:grid-cols-3">
           {filtered.map((t) => (
-            <TrendCard key={t.id} trend={t} />
+            <TrendCard key={t.id} trend={t} className="h-full" />
           ))}
         </div>
       ) : (
         <EmptyState
           icon={<Radar className="h-6 w-6" />}
-          title="No trends in this niche yet"
-          description="Try a different niche or refresh to pull the latest signals from across platforms."
+          title={`No trends match “${niche}”`}
+          description="Nothing is trending in this niche right now. Clear the filter to see every signal, or refresh to pull the latest from across platforms."
           action={
             <Button variant="outline" onClick={() => setNiche("All niches")}>
-              <RefreshCw className="h-4 w-4" /> Show all niches
+              <X className="h-4 w-4" /> Clear filter
             </Button>
           }
         />

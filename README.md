@@ -114,9 +114,10 @@ switch on auth + live data.
   Page + Instagram Business followers) into `analytics_snapshots`. Uses stored
   encrypted tokens; LinkedIn member analytics aren't publicly available so it's
   Meta-only for now.
-- **Trigger** — `GET|POST /api/cron/analytics` (a second daily `vercel.json`
-  cron, `CRON_SECRET`-gated) for all workspaces, or the **"Sync now"** button on
-  the Analytics page for the active workspace.
+- **Trigger** — analytics sync runs as part of the consolidated daily
+  **`/api/cron/maintenance`** cron (see below), or via the **"Sync now"** button on
+  the Analytics page. The standalone `GET|POST /api/cron/analytics` endpoint
+  remains for external/back-compat callers.
 - **Surface** — when synced data exists, the Analytics page shows a live
   per-platform follower strip; the showcase charts remain demo data.
 
@@ -136,10 +137,23 @@ switch on auth + live data.
 - **Engine** — `src/lib/inbox/sync.ts` pulls recent comments from Facebook Page
   posts + Instagram media into `comments_inbox`, deduped by `external_id`
   (additive column + partial unique index).
-- **Trigger** — the **"Sync"** button on the Inbox page (active workspace) or
-  `GET|POST /api/cron/inbox` for an external scheduler. The inbox cron is **not**
-  in `vercel.json` (Hobby allows only 2 crons — used by publish + analytics);
-  fold it into an external scheduler or upgrade to register it.
+- **Trigger** — the **"Sync"** button on the Inbox page (active workspace), or
+  the consolidated daily **`/api/cron/maintenance`** cron (analytics → inbox →
+  automations). `GET|POST /api/cron/inbox` remains for external/back-compat
+  callers.
+
+## Backend operations (Phase 7)
+- **Scheduled jobs** — `vercel.json` registers two daily crons (the Hobby limit):
+  `/api/cron/publish` (time-critical job runner) and **`/api/cron/maintenance`**,
+  which runs analytics sync → inbox/comment sync → the automation engine in one
+  pass. Both are `CRON_SECRET`-gated and a safe demo no-op without a service role.
+  The per-job endpoints (`/api/cron/{analytics,inbox}`) stay available for
+  external schedulers.
+- **Posting preferences** — saved to `settings.posting_prefs` (window, posts/day,
+  auto-queue, best-time) + `settings.notification_prefs` from the Settings page.
+- **Next-queue scheduling** — `next_queue` posts resolve a real next slot from the
+  workspace's posting window + IANA timezone (`src/lib/publishing/slots.ts`),
+  replacing the previous +24h placeholder.
 
 ## AI setup (Content Studio)
 The Content Studio works in two modes:

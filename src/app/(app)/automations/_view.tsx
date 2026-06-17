@@ -36,7 +36,11 @@ import {
 } from "@/app/actions/automations";
 import type { listAutomations } from "@/lib/db/automations";
 
-type AutomationsViewProps = { automations: Awaited<ReturnType<typeof listAutomations>> };
+type AutomationsViewProps = {
+  automations: Awaited<ReturnType<typeof listAutomations>>;
+  pendingApprovals: number;
+  leadsCaptured: number;
+};
 
 type AutomationType = "dm-keyword" | "comment-reply" | "lead-capture";
 
@@ -136,7 +140,11 @@ const logColumns: Column<LogRow>[] = [
   },
 ];
 
-export function AutomationsView({ automations }: AutomationsViewProps) {
+export function AutomationsView({
+  automations,
+  pendingApprovals,
+  leadsCaptured,
+}: AutomationsViewProps) {
   const router = useRouter();
   const [, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -283,25 +291,21 @@ export function AutomationsView({ automations }: AutomationsViewProps) {
         <StatCard
           label="Total runs"
           value={totalRuns.toLocaleString()}
-          delta="+184"
-          positive
           hint="all time"
           icon={<Play className="h-4 w-4" />}
           accent="from-sky-500 to-blue-500"
         />
         <StatCard
           label="Pending approvals"
-          value={3}
+          value={pendingApprovals}
           hint="awaiting your review"
           icon={<Clock4 className="h-4 w-4" />}
           accent="from-amber-400 to-orange-500"
         />
         <StatCard
           label="Leads captured"
-          value={248}
-          delta="+22.6%"
-          positive
-          hint="this month"
+          value={leadsCaptured.toLocaleString()}
+          hint="lead-capture automations"
           icon={<Users className="h-4 w-4" />}
           accent="from-emerald-500 to-teal-500"
         />

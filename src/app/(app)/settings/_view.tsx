@@ -175,11 +175,18 @@ export function SettingsView({ settings, connectedAccounts }: SettingsViewProps)
   const router = useRouter();
   const [active, setActive] = useState<SectionId>("profile");
 
-  const [notifs, setNotifs] = useState<Record<string, boolean>>(
-    Object.fromEntries(notificationPrefs.map((p) => [p.id, p.default]))
+  const [notifs, setNotifs] = useState<Record<string, boolean>>({
+    ...Object.fromEntries(notificationPrefs.map((p) => [p.id, p.default])),
+    ...settings.notificationPrefs,
+  });
+  const [autoQueue, setAutoQueue] = useState(settings.postingPrefs.autoQueue);
+  const [bestTime, setBestTime] = useState(settings.postingPrefs.bestTime);
+  const [defaultWindow, setDefaultWindow] = useState(settings.postingPrefs.defaultWindow);
+  const [postsPerDay, setPostsPerDay] = useState(
+    settings.postingPrefs.postsPerDay === 0
+      ? "Unlimited"
+      : String(settings.postingPrefs.postsPerDay)
   );
-  const [autoQueue, setAutoQueue] = useState(true);
-  const [bestTime, setBestTime] = useState(true);
 
   // Editable settings field values (seeded from server-provided defaults).
   const [brandName, setBrandName] = useState(settings.brandName);
@@ -219,6 +226,39 @@ export function SettingsView({ settings, connectedAccounts }: SettingsViewProps)
         return;
       }
       setPanelMessage({ tone: "success", text: "Changes saved" });
+      router.refresh();
+    });
+  };
+
+  const savePosting = () => {
+    setPanelMessage(null);
+    startSaving(async () => {
+      const result = await updateSettings({
+        postingPrefs: {
+          defaultWindow,
+          postsPerDay: postsPerDay === "Unlimited" ? 0 : Number(postsPerDay),
+          autoQueue,
+          bestTime,
+        },
+      });
+      if (!result.ok) {
+        setPanelMessage({ tone: "error", text: result.error });
+        return;
+      }
+      setPanelMessage({ tone: "success", text: "Posting preferences saved" });
+      router.refresh();
+    });
+  };
+
+  const saveNotifications = () => {
+    setPanelMessage(null);
+    startSaving(async () => {
+      const result = await updateSettings({ notificationPrefs: notifs });
+      if (!result.ok) {
+        setPanelMessage({ tone: "error", text: result.error });
+        return;
+      }
+      setPanelMessage({ tone: "success", text: "Notification preferences saved" });
       router.refresh();
     });
   };
@@ -534,7 +574,14 @@ export function SettingsView({ settings, connectedAccounts }: SettingsViewProps)
           )}
 
           {active === "notifications" && (
-            <Panel title="Notifications" description="Choose what we email and notify you about." icon={Bell}>
+            <Panel
+              title="Notifications"
+              description="Choose what we email and notify you about."
+              icon={Bell}
+              onSave={saveNotifications}
+              saving={saving}
+              message={panelMessage}
+            >
               <ul className="divide-y divide-border">
                 {notificationPrefs.map((p) => (
                   <li
@@ -557,7 +604,14 @@ export function SettingsView({ settings, connectedAccounts }: SettingsViewProps)
           )}
 
           {active === "posting" && (
-            <Panel title="Posting preferences" description="Control how posts are queued and scheduled." icon={Clock}>
+            <Panel
+              title="Posting preferences"
+              description="Control how posts are queued and scheduled."
+              icon={Clock}
+              onSave={savePosting}
+              saving={saving}
+              message={panelMessage}
+            >
               <div className="grid gap-5 sm:grid-cols-2">
                 <Field label="Default schedule window" hint="New posts default into this window.">
                   <SelectField
@@ -567,11 +621,16 @@ export function SettingsView({ settings, connectedAccounts }: SettingsViewProps)
                       "Afternoon · 2–4 PM",
                       "Evening · 6–8 PM",
                     ]}
-                    defaultValue="Morning · 8–10 AM"
+                    value={defaultWindow}
+                    onChange={(e) => setDefaultWindow(e.target.value)}
                   />
                 </Field>
                 <Field label="Posts per day cap">
-                  <SelectField options={["2", "3", "4", "5", "Unlimited"]} defaultValue="3" />
+                  <SelectField
+                    options={["2", "3", "4", "5", "Unlimited"]}
+                    value={postsPerDay}
+                    onChange={(e) => setPostsPerDay(e.target.value)}
+                  />
                 </Field>
               </div>
               <div className="divide-y divide-border rounded-xl border border-border">

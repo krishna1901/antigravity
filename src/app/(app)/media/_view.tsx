@@ -46,6 +46,7 @@ import type { listPosts } from "@/lib/db/posts";
 type MediaViewProps = {
   assets: Awaited<ReturnType<typeof listMedia>>;
   posts: Awaited<ReturnType<typeof listPosts>>;
+  storageLabel: string;
 };
 
 type MediaAsset = MediaViewProps["assets"][number];
@@ -105,7 +106,7 @@ function kindForFile(file: File): MediaKind {
   return "image";
 }
 
-export function MediaView({ assets, posts }: MediaViewProps) {
+export function MediaView({ assets, posts, storageLabel }: MediaViewProps) {
   const router = useRouter();
   const [pending, start] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -260,8 +261,6 @@ export function MediaView({ assets, posts }: MediaViewProps) {
         <StatCard
           label="Total assets"
           value={assets.length}
-          delta="+8"
-          positive
           icon={<Layers className="h-4 w-4" />}
           accent="from-brand-500 to-coral-500"
           hint="across all folders"
@@ -282,12 +281,10 @@ export function MediaView({ assets, posts }: MediaViewProps) {
         />
         <StatCard
           label="Storage used"
-          value="1.2 GB"
-          delta="24%"
-          positive
+          value={storageLabel}
           icon={<HardDrive className="h-4 w-4" />}
           accent="from-emerald-500 to-teal-500"
-          hint="of 5 GB on the Pro plan"
+          hint={`across ${assets.length} assets`}
         />
       </div>
 

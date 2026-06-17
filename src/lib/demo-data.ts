@@ -478,6 +478,19 @@ export const settingsDefaults = {
   aiProvider: "OpenAI (GPT)",
   webhookUrl: "https://hooks.socialflow.ai/ws_1/events",
   timezone: "America/New_York",
+  postingPrefs: {
+    defaultWindow: "Morning · 8–10 AM",
+    postsPerDay: 3,
+    autoQueue: true,
+    bestTime: true,
+  },
+  notificationPrefs: {
+    digests: true,
+    comments: true,
+    published: true,
+    trends: false,
+    weekly: true,
+  } as Record<string, boolean>,
 };
 
 export const connectedChannels = [

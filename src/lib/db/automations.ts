@@ -53,6 +53,42 @@ export async function listAutomations(): Promise<MappedAutomation[]> {
   return (data as AutomationRow[]).map(mapAutomation);
 }
 
+export interface AutomationStats {
+  /** Inbox items awaiting review (comments_inbox status='new'). */
+  pendingApprovals: number;
+  /** Total runs across lead-capture automations. */
+  leadsCaptured: number;
+}
+
+/**
+ * Live counters for the automations dashboard. Demo/preview returns
+ * representative figures so the cards render without auth.
+ */
+export async function getAutomationStats(): Promise<AutomationStats> {
+  const ctx = await getDbContext();
+  if (!isLive(ctx)) return { pendingApprovals: 3, leadsCaptured: 248 };
+
+  const [inboxRes, leadRes] = await Promise.all([
+    ctx.supabase
+      .from("comments_inbox")
+      .select("*", { count: "exact", head: true })
+      .eq("workspace_id", ctx.workspaceId)
+      .eq("status", "new"),
+    ctx.supabase
+      .from("dm_automations")
+      .select("runs")
+      .eq("workspace_id", ctx.workspaceId)
+      .eq("type", "lead-capture"),
+  ]);
+
+  const pendingApprovals = inboxRes.count ?? 0;
+  const leadsCaptured = ((leadRes.data as { runs: number }[] | null) ?? []).reduce(
+    (sum, r) => sum + (r.runs ?? 0),
+    0
+  );
+  return { pendingApprovals, leadsCaptured };
+}
+
 export interface CreateAutomationInput {
   name: string;
   type?: AutomationRow["type"];

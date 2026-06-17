@@ -352,19 +352,34 @@ create index if not exists idx_ideas_priority on public.content_ideas (priority)
 create index if not exists idx_ideas_created_at on public.content_ideas (created_at);
 
 -- ============================================================================
--- 15. ai_generations — saved AI generation history (no live AI yet).
+-- 15. ai_generations — saved AI generation history (Phase 3A: live providers).
 -- ============================================================================
 create table if not exists public.ai_generations (
-  id            uuid primary key default gen_random_uuid(),
-  workspace_id  uuid not null references public.workspaces (id) on delete cascade,
-  created_by    uuid references auth.users (id) on delete set null,
-  tool          text not null,
-  prompt        text,
-  output        text,
-  metadata      jsonb,
-  created_at    timestamptz not null default now()
+  id             uuid primary key default gen_random_uuid(),
+  workspace_id   uuid not null references public.workspaces (id) on delete cascade,
+  created_by     uuid references auth.users (id) on delete set null,
+  tool           text not null,
+  prompt         text,
+  output         text,
+  metadata       jsonb,
+  -- Phase 3A: provider/model + structured I/O + run status.
+  provider       text,
+  model          text,
+  status         text not null default 'success'
+                 check (status in ('success','demo','failed')),
+  error_message  text,
+  prompt_version text,
+  input          jsonb,
+  output_json    jsonb,
+  created_at     timestamptz not null default now()
 );
-comment on table public.ai_generations is 'History of AI tool runs (Phase 3 wires real providers).';
+comment on table public.ai_generations is 'History of AI tool runs (Phase 3A wires OpenAI/Anthropic providers).';
+comment on column public.ai_generations.provider is 'AI provider used (openai|anthropic), null for demo.';
+comment on column public.ai_generations.model is 'Model id used for the generation.';
+comment on column public.ai_generations.status is 'success | demo | failed.';
+comment on column public.ai_generations.prompt_version is 'Prompt template version for reproducibility.';
+comment on column public.ai_generations.input is 'Structured generation input (tool, topic, audience, etc.).';
+comment on column public.ai_generations.output_json is 'Structured generation output (variations, raw text).';
 create index if not exists idx_ai_workspace on public.ai_generations (workspace_id);
 create index if not exists idx_ai_created_at on public.ai_generations (created_at);
 

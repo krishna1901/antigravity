@@ -60,6 +60,21 @@ switch on auth + live data.
 - **Scheduler** (`src/lib/publishing/*`) — `scheduled_posts` → `publishing_jobs`
   → `publishing_logs`, with per-platform **placeholder** formatters/publishers.
   No real publishing happens yet.
+- **AI content generation** (`src/lib/ai/*`) — provider-based, **server-only**
+  generation for the 10 Content Studio tools. Dependency-free REST calls to
+  OpenAI (`/v1/chat/completions`) and Anthropic (`/v1/messages`). Every run is
+  persisted to `ai_generations` (provider, model, status, input/output JSON).
+
+## AI setup (Content Studio)
+The Content Studio works in two modes:
+- **Demo mode (default)** — with NO provider key set, generations return
+  realistic, on-brand sample output and a banner notes that it's demo mode. The
+  build/preview stay green with no secrets.
+- **Live mode** — set `OPENAI_API_KEY` and/or `ANTHROPIC_API_KEY` (server-only,
+  never `NEXT_PUBLIC_`). Optionally pin the provider with `AI_DEFAULT_PROVIDER`
+  (`openai` | `anthropic`; defaults to whichever key exists, Anthropic preferred)
+  and the model with `AI_DEFAULT_MODEL`. Keys are read on the server only and
+  never reach the client bundle (`import "server-only"`).
 
 ## Scripts
 ```bash
@@ -78,8 +93,6 @@ in demo mode.
   `social_tokens`, `platform_permissions`).
 - Real publishing per platform (`src/lib/publishing/platforms/*` — currently
   placeholders) + a cron/queue **job runner** that drains `publishing_jobs`.
-- Real AI generation (OpenAI / Claude) behind `src/app/actions/generate.ts`,
-  persisting to `ai_generations`.
 - Analytics sync + comment/DM sync into `analytics_snapshots` / `comments_inbox`.
 - Finish wiring the remaining list pages from demo fallback to live reads
   (the data layer + actions are ready; dashboard counts are already live).

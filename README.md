@@ -120,6 +120,15 @@ switch on auth + live data.
 - **Surface** — when synced data exists, the Analytics page shows a live
   per-platform follower strip; the showcase charts remain demo data.
 
+## Inbox / comment sync (Phase 3F)
+- **Engine** — `src/lib/inbox/sync.ts` pulls recent comments from Facebook Page
+  posts + Instagram media into `comments_inbox`, deduped by `external_id`
+  (additive column + partial unique index).
+- **Trigger** — the **"Sync"** button on the Inbox page (active workspace) or
+  `GET|POST /api/cron/inbox` for an external scheduler. The inbox cron is **not**
+  in `vercel.json` (Hobby allows only 2 crons — used by publish + analytics);
+  fold it into an external scheduler or upgrade to register it.
+
 ## AI setup (Content Studio)
 The Content Studio works in two modes:
 - **Demo mode (default)** — with NO provider key set, generations return

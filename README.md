@@ -152,6 +152,18 @@ The Content Studio works in two modes:
   and the model with `AI_DEFAULT_MODEL`. Keys are read on the server only and
   never reach the client bundle (`import "server-only"`).
 
+## Plans, usage & billing (Phase 4)
+- **Plans** — `src/lib/billing/plans.ts` defines Starter / Pro / Agency with
+  per-plan limits (connected accounts, AI generations/month, scheduled posts).
+- **Usage + enforcement** — `src/lib/billing/usage.ts` computes live usage; the
+  AI generate action enforces the monthly generation quota and returns a clear
+  upgrade message when exceeded.
+- **Billing page** — `/billing` shows the current plan, usage meters, and a plan
+  comparison. The upgrade CTA links to `NEXT_PUBLIC_UPGRADE_URL` (e.g. a Stripe
+  checkout) or a sales contact when unset. Real checkout is left as an
+  integration point.
+- **Resilience** — root `error.tsx` (recovery boundary) + branded `not-found.tsx`.
+
 ## Scripts
 ```bash
 npm run dev     # dev server

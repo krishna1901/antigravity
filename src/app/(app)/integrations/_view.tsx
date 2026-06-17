@@ -70,11 +70,26 @@ const ERROR_MESSAGES: Record<string, string> = {
   state_mismatch: "Security check failed — please try connecting again.",
   missing_code: "LinkedIn didn't return an authorization code. Please retry.",
   linkedin_connect_failed: "Couldn't complete the LinkedIn connection. Please try again.",
+  meta_not_configured: "Meta isn't configured on the server (missing app credentials).",
+  meta_connect_failed: "Couldn't complete the Meta connection. Please try again.",
+  no_facebook_page: "No Facebook Page found on that account. Create/select a Page and retry.",
   user_cancelled_login: "Connection cancelled.",
 };
 
 function isPlatform(id: string): id is Platform {
   return (PLATFORM_IDS as string[]).includes(id);
+}
+
+/** OAuth start path + whether the provider is configured, for a platform. */
+function oauthStartFor(
+  platform: string,
+  linkedinConfigured: boolean,
+  metaConfigured: boolean
+): { href: string; configured: boolean } | null {
+  if (platform === "linkedin") return { href: "/api/oauth/linkedin/start", configured: linkedinConfigured };
+  if (platform === "facebook" || platform === "instagram")
+    return { href: "/api/oauth/meta/start", configured: metaConfigured };
+  return null;
 }
 
 function IntegrationTile({ item }: { item: Integration }) {
@@ -96,18 +111,21 @@ function IntegrationCard({
   item,
   live,
   linkedinConfigured,
+  metaConfigured,
   onDisconnect,
   disconnecting,
 }: {
   item: Integration;
   live: boolean;
   linkedinConfigured: boolean;
+  metaConfigured: boolean;
   onDisconnect: (platform: string) => void;
   disconnecting: boolean;
 }) {
-  const isLinkedIn = item.id === "linkedin";
-  // In live mode only LinkedIn has a real connect flow wired up so far.
-  const connectable = !live || (isLinkedIn && linkedinConfigured);
+  const oauth = oauthStartFor(item.id, linkedinConfigured, metaConfigured);
+  // Connectable in demo (showcase) or when the provider's OAuth is configured.
+  const connectable = !live || Boolean(oauth?.configured);
+  const supportsDisconnect = live && Boolean(oauth);
 
   return (
     <div className="group flex h-full flex-col rounded-2xl border border-border bg-card p-5 shadow-soft transition-all duration-300 hover:-translate-y-0.5 hover:shadow-elevated hover:ring-1 hover:ring-brand-200/70">
@@ -139,7 +157,7 @@ function IntegrationCard({
 
       <div className="mt-4 flex items-center">
         {item.status === "connected" ? (
-          live && isLinkedIn ? (
+          supportsDisconnect ? (
             <Button
               variant="outline"
               size="sm"
@@ -154,22 +172,22 @@ function IntegrationCard({
               Manage
             </Button>
           )
-        ) : item.status === "error" && isLinkedIn && connectable ? (
+        ) : item.status === "error" && oauth && connectable ? (
           <a
-            href="/api/oauth/linkedin/start"
+            href={oauth.href}
             className={cn(buttonVariants({ variant: "destructive", size: "sm" }), "w-full")}
           >
             <RefreshCw className="h-3.5 w-3.5" /> Reconnect
           </a>
-        ) : isLinkedIn && connectable ? (
+        ) : oauth && connectable ? (
           <a
-            href="/api/oauth/linkedin/start"
+            href={oauth.href}
             className={cn(
               buttonVariants({ size: "sm" }),
               `w-full bg-gradient-to-r text-white hover:opacity-90 ${item.accent}`
             )}
           >
-            <Plug className="h-3.5 w-3.5" /> Connect LinkedIn
+            <Plug className="h-3.5 w-3.5" /> Connect {item.name}
           </a>
         ) : live ? (
           <Button size="sm" variant="outline" className="w-full" disabled>
@@ -189,10 +207,12 @@ export function IntegrationsView({
   live,
   liveAccounts,
   linkedinConfigured,
+  metaConfigured,
 }: {
   live: boolean;
   liveAccounts: MappedConnectedAccount[];
   linkedinConfigured: boolean;
+  metaConfigured: boolean;
 }) {
   const [status, setStatus] = useState<StatusFilter>("all");
   const [dismissed, setDismissed] = useState(false);
@@ -304,7 +324,7 @@ export function IntegrationsView({
         <div className="flex items-start justify-between gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
           <span className="flex items-center gap-2">
             <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" />
-            <span className="font-medium capitalize">{connectedParam}</span> connected successfully.
+            <span className="font-medium capitalize">{connectedParam.replace(",", " & ")}</span> connected successfully.
           </span>
           <button type="button" onClick={() => setDismissed(true)} aria-label="Dismiss">
             <XIcon className="h-4 w-4" />
@@ -385,6 +405,7 @@ export function IntegrationsView({
                     item={item}
                     live={live}
                     linkedinConfigured={linkedinConfigured}
+                    metaConfigured={metaConfigured}
                     onDisconnect={handleDisconnect}
                     disconnecting={isDisconnecting}
                   />

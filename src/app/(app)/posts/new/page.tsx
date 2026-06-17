@@ -21,6 +21,10 @@ import {
   StickyNote,
   Smartphone,
   Wand2,
+  PenSquare,
+  Sparkle,
+  Megaphone,
+  Wand,
 } from "lucide-react";
 import { PageHeader } from "@/components/ui/page-header";
 import { ChartCard } from "@/components/ui/chart-card";
@@ -51,7 +55,12 @@ const SCHEDULE_MODES = [
 
 const CHANNELS: Platform[] = ["instagram", "linkedin", "x", "tiktok", "youtube", "facebook"];
 
-const AI_ACTIONS = ["Generate hook", "Generate caption", "Generate hashtags", "Improve CTA"];
+const AI_ACTIONS = [
+  { label: "Generate hook", hint: "Scroll-stopping opener", icon: Sparkle },
+  { label: "Generate caption", hint: "On-brand long copy", icon: Wand },
+  { label: "Generate hashtags", hint: "Reach-optimized tags", icon: Hash },
+  { label: "Improve CTA", hint: "Drive the next action", icon: Megaphone },
+];
 
 const MEDIA_THUMBS = [
   { id: "att1", gradient: "from-orange-400 to-rose-500", label: "cover.png" },
@@ -106,8 +115,10 @@ export default function NewPostPage() {
       </div>
 
       <PageHeader
+        eyebrow="Compose"
         title="New Post"
-        description="Compose, preview and schedule across channels."
+        description="Compose, preview and schedule across every connected channel."
+        icon={<PenSquare className="h-5 w-5" />}
         actions={
           <>
             <Button variant="ghost">Save draft</Button>
@@ -140,7 +151,7 @@ export default function NewPostPage() {
               </div>
               <div className="space-y-1.5">
                 <Label>Post type</Label>
-                <Segmented options={POST_TYPES} value={postType} onValueChange={setPostType} />
+                <Segmented options={POST_TYPES} value={postType} onValueChange={setPostType} className="w-full" />
               </div>
             </div>
           </ChartCard>
@@ -150,7 +161,7 @@ export default function NewPostPage() {
             title="Channels"
             subtitle="Pick where this post goes live"
             action={
-              <span className="rounded-full bg-brand-50 px-2 py-0.5 text-xs font-semibold text-brand-600">
+              <span className="rounded-full bg-brand-50 px-2.5 py-0.5 text-xs font-semibold tabular-nums text-brand-600">
                 {selectedChannels.size} selected
               </span>
             }
@@ -166,10 +177,10 @@ export default function NewPostPage() {
                     onClick={() => toggleChannel(p)}
                     aria-pressed={active}
                     className={cn(
-                      "inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm font-medium transition-all",
+                      "inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm font-medium transition-all duration-200",
                       active
                         ? "border-transparent bg-gradient-to-r from-brand-500 to-coral-500 text-white shadow-sm shadow-brand-500/20"
-                        : "border-border bg-card text-muted-foreground hover:border-brand-200 hover:text-foreground"
+                        : "border-border bg-card text-muted-foreground hover:-translate-y-0.5 hover:border-brand-200 hover:text-foreground"
                     )}
                   >
                     <PlatformIcon platform={p} className="h-4 w-4" />
@@ -178,6 +189,11 @@ export default function NewPostPage() {
                 );
               })}
             </div>
+            {selectedChannels.size === 0 && (
+              <p className="mt-3 text-xs font-medium text-amber-600">
+                Select at least one channel to publish this post.
+              </p>
+            )}
           </ChartCard>
 
           {/* Captions */}
@@ -196,7 +212,7 @@ export default function NewPostPage() {
                   value={universalCaption}
                   onChange={(e) => setUniversalCaption(e.target.value)}
                 />
-                <p className="mt-1.5 text-right text-[11px] text-muted-foreground">
+                <p className="mt-1.5 text-right text-[11px] tabular-nums text-muted-foreground">
                   {universalCaption.length} characters
                 </p>
               </TabsContent>
@@ -208,7 +224,7 @@ export default function NewPostPage() {
                   value={igCaption}
                   onChange={(e) => setIgCaption(e.target.value)}
                 />
-                <p className="mt-1.5 text-right text-[11px] text-muted-foreground">
+                <p className="mt-1.5 text-right text-[11px] tabular-nums text-muted-foreground">
                   {igCaption.length} / 2,200 characters
                 </p>
               </TabsContent>
@@ -220,7 +236,7 @@ export default function NewPostPage() {
                   value={liCaption}
                   onChange={(e) => setLiCaption(e.target.value)}
                 />
-                <p className="mt-1.5 text-right text-[11px] text-muted-foreground">
+                <p className="mt-1.5 text-right text-[11px] tabular-nums text-muted-foreground">
                   {liCaption.length} / 3,000 characters
                 </p>
               </TabsContent>
@@ -261,7 +277,15 @@ export default function NewPostPage() {
           </ChartCard>
 
           {/* Media */}
-          <ChartCard title="Media" subtitle="Attach images, video or carousels">
+          <ChartCard
+            title="Media"
+            subtitle="Attach images, video or carousels"
+            action={
+              <span className="rounded-full bg-muted px-2.5 py-0.5 text-xs font-semibold tabular-nums text-muted-foreground">
+                {attachments.length} attached
+              </span>
+            }
+          >
             <div className="space-y-4">
               <UploadDropzone hint="Drop media for this post — images, video, ZIPs up to 200MB" />
               {attachments.length > 0 && (
@@ -270,7 +294,7 @@ export default function NewPostPage() {
                     <div key={a.id} className="group/thumb relative">
                       <div
                         className={cn(
-                          "aspect-square w-full rounded-xl bg-gradient-to-br shadow-sm",
+                          "aspect-square w-full rounded-xl bg-gradient-to-br shadow-sm ring-1 ring-border/50 transition-transform duration-200 group-hover/thumb:-translate-y-0.5",
                           a.gradient
                         )}
                       />
@@ -314,31 +338,53 @@ export default function NewPostPage() {
               </p>
               <div className="aspect-[4/5] w-full rounded-2xl bg-gradient-to-br from-brand-500 via-coral-400 to-amber-400 shadow-sm" />
               <div className="mt-3 flex items-center gap-4 text-muted-foreground">
-                <span className="inline-flex items-center gap-1 text-[11px] font-medium">
+                <span className="inline-flex items-center gap-1 text-[11px] font-medium tabular-nums">
                   <Heart className="h-4 w-4" /> 1.2K
                 </span>
-                <span className="inline-flex items-center gap-1 text-[11px] font-medium">
+                <span className="inline-flex items-center gap-1 text-[11px] font-medium tabular-nums">
                   <MessageCircle className="h-4 w-4" /> 86
                 </span>
-                <span className="inline-flex items-center gap-1 text-[11px] font-medium">
+                <span className="inline-flex items-center gap-1 text-[11px] font-medium tabular-nums">
                   <Send className="h-4 w-4" /> 24
                 </span>
                 <Bookmark className="ml-auto h-4 w-4" />
               </div>
             </div>
+            <p className="mt-3 text-center text-[11px] text-muted-foreground">
+              Previewing{" "}
+              <span className="font-medium text-foreground">{platformMeta[previewPlatform].label}</span>
+              {selectedChannels.size > 1 && ` · +${selectedChannels.size - 1} more`}
+            </p>
           </ChartCard>
 
           {/* AI assist */}
           <ChartCard
             title="AI assist"
             subtitle="Let SocialFlow AI draft for you"
-            action={<Wand2 className="h-4 w-4 text-brand-500" />}
+            action={
+              <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-violet-500 to-indigo-500 text-white shadow-sm">
+                <Wand2 className="h-4 w-4" />
+              </span>
+            }
           >
             <div className="space-y-2">
-              {AI_ACTIONS.map((label) => (
-                <Button key={label} variant="outline" className="w-full justify-start">
-                  <Sparkles className="h-4 w-4 text-brand-500" /> {label}
-                </Button>
+              {AI_ACTIONS.map((action) => (
+                <button
+                  key={action.label}
+                  type="button"
+                  className="group/ai flex w-full items-center gap-3 rounded-xl border border-border bg-card px-3 py-2.5 text-left transition-all duration-200 hover:-translate-y-0.5 hover:border-brand-200 hover:shadow-sm"
+                >
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-brand-50 to-coral-50 text-brand-500 ring-1 ring-brand-100">
+                    <action.icon className="h-4 w-4" />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-sm font-medium text-foreground group-hover/ai:text-brand-600">
+                      {action.label}
+                    </span>
+                    <span className="block text-[11px] text-muted-foreground">{action.hint}</span>
+                  </span>
+                  <Sparkles className="h-4 w-4 shrink-0 text-muted-foreground/40 transition-colors group-hover/ai:text-brand-500" />
+                </button>
               ))}
               <p className="pt-1 text-center text-[11px] text-muted-foreground">
                 Powered by SocialFlow AI

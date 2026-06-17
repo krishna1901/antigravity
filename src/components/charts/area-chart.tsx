@@ -1,4 +1,5 @@
 import { useId } from "react";
+import { cn } from "@/lib/utils";
 
 export interface AreaChartProps {
   data: { label: string; value: number }[];
@@ -7,6 +8,7 @@ export interface AreaChartProps {
   className?: string;
   showGrid?: boolean;
   showDots?: boolean;
+  showYAxis?: boolean;
   valueFormatter?: (n: number) => string;
 }
 
@@ -21,6 +23,7 @@ export function AreaChart({
   className,
   showGrid = true,
   showDots = true,
+  showYAxis = false,
   valueFormatter = (n) => `${n}`,
 }: AreaChartProps) {
   const id = useId().replace(/:/g, "");
@@ -55,59 +58,75 @@ export function AreaChart({
 
   const areaPath = `${linePath} L ${points[points.length - 1].x} ${H - padBottom} L ${points[0].x} ${H - padBottom} Z`;
 
-  const gridLines = [0.25, 0.5, 0.75];
+  const gridLines = [0, 0.5, 1];
+  const tickValue = (t: number) => valueFormatter(Math.round(max - (max - min) * t));
 
   return (
     <div className={className}>
-      <svg
-        viewBox={`0 0 ${W} ${H}`}
-        width="100%"
-        height={H}
-        preserveAspectRatio="none"
-        role="img"
-        aria-label="Area chart"
-      >
-        <defs>
-          <linearGradient id={`area-${id}`} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor={color} stopOpacity="0.28" />
-            <stop offset="100%" stopColor={color} stopOpacity="0" />
-          </linearGradient>
-        </defs>
+      <div className={cn("relative", showYAxis && "pl-10")}>
+        {showYAxis && (
+          <div className="pointer-events-none absolute left-0 top-0 w-9" style={{ height: H }}>
+            {gridLines.map((t) => (
+              <span
+                key={t}
+                className="absolute right-1 -translate-y-1/2 text-[10px] font-medium tabular-nums text-muted-foreground"
+                style={{ top: padTop + innerH * t }}
+              >
+                {tickValue(t)}
+              </span>
+            ))}
+          </div>
+        )}
+        <svg
+          viewBox={`0 0 ${W} ${H}`}
+          width="100%"
+          height={H}
+          preserveAspectRatio="none"
+          role="img"
+          aria-label="Area chart"
+        >
+          <defs>
+            <linearGradient id={`area-${id}`} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={color} stopOpacity="0.28" />
+              <stop offset="100%" stopColor={color} stopOpacity="0" />
+            </linearGradient>
+          </defs>
 
-        {showGrid &&
-          gridLines.map((g) => (
-            <line
-              key={g}
-              x1={padX}
-              x2={W - padX}
-              y1={padTop + innerH * g}
-              y2={padTop + innerH * g}
-              stroke="var(--border)"
-              strokeWidth="1"
-              vectorEffect="non-scaling-stroke"
-            />
-          ))}
+          {showGrid &&
+            gridLines.map((g) => (
+              <line
+                key={g}
+                x1={padX}
+                x2={W - padX}
+                y1={padTop + innerH * g}
+                y2={padTop + innerH * g}
+                stroke="var(--border)"
+                strokeWidth="1"
+                vectorEffect="non-scaling-stroke"
+              />
+            ))}
 
-        <path d={areaPath} fill={`url(#area-${id})`} />
-        <path
-          d={linePath}
-          fill="none"
-          stroke={color}
-          strokeWidth="2.5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          vectorEffect="non-scaling-stroke"
-        />
+          <path d={areaPath} fill={`url(#area-${id})`} />
+          <path
+            d={linePath}
+            fill="none"
+            stroke={color}
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            vectorEffect="non-scaling-stroke"
+          />
 
-        {showDots &&
-          points.map((p, i) => (
-            <g key={i}>
-              <circle cx={p.x} cy={p.y} r="3.5" fill="white" stroke={color} strokeWidth="2" vectorEffect="non-scaling-stroke" />
-              <title>{`${data[i].label}: ${valueFormatter(data[i].value)}`}</title>
-            </g>
-          ))}
-      </svg>
-      <div className="mt-2 flex justify-between px-1 text-[11px] font-medium text-muted-foreground">
+          {showDots &&
+            points.map((p, i) => (
+              <g key={i}>
+                <circle cx={p.x} cy={p.y} r="3.5" fill="white" stroke={color} strokeWidth="2" vectorEffect="non-scaling-stroke" />
+                <title>{`${data[i].label}: ${valueFormatter(data[i].value)}`}</title>
+              </g>
+            ))}
+        </svg>
+      </div>
+      <div className={cn("mt-2 flex justify-between px-1 text-[11px] font-medium text-muted-foreground", showYAxis && "pl-10")}>
         {data.map((d) => (
           <span key={d.label}>{d.label}</span>
         ))}

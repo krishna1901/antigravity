@@ -1,3 +1,5 @@
+import { useId } from "react";
+
 export interface DonutChartProps {
   data: { label: string; value: number; color: string }[];
   size?: number;
@@ -8,9 +10,7 @@ export interface DonutChartProps {
   className?: string;
 }
 
-/**
- * SVG donut chart with optional legend. Dependency-free.
- */
+/** SVG donut chart with gradient segments + optional legend. Dependency-free. */
 export function DonutChart({
   data,
   size = 180,
@@ -20,6 +20,7 @@ export function DonutChart({
   showLegend = true,
   className,
 }: DonutChartProps) {
+  const id = useId().replace(/:/g, "");
   const total = data.reduce((s, d) => s + d.value, 0) || 1;
   const radius = (size - thickness) / 2;
   const circumference = 2 * Math.PI * radius;
@@ -28,7 +29,7 @@ export function DonutChart({
     const offset = data
       .slice(0, i)
       .reduce((s, x) => s + (x.value / total) * circumference, 0);
-    return { ...d, len, offset };
+    return { ...d, len, offset, i };
   });
 
   return (
@@ -36,6 +37,14 @@ export function DonutChart({
       <div className="flex items-center gap-6">
         <div className="relative shrink-0" style={{ width: size, height: size }}>
           <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="-rotate-90">
+            <defs>
+              {segments.map((s) => (
+                <linearGradient key={s.label} id={`seg-${id}-${s.i}`} x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0%" stopColor={s.color} stopOpacity="1" />
+                  <stop offset="100%" stopColor={s.color} stopOpacity="0.6" />
+                </linearGradient>
+              ))}
+            </defs>
             <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="var(--muted)" strokeWidth={thickness} />
             {segments.map((s) => (
               <circle
@@ -44,7 +53,7 @@ export function DonutChart({
                 cy={size / 2}
                 r={radius}
                 fill="none"
-                stroke={s.color}
+                stroke={`url(#seg-${id}-${s.i})`}
                 strokeWidth={thickness}
                 strokeDasharray={`${s.len} ${circumference - s.len}`}
                 strokeDashoffset={-s.offset}
@@ -56,7 +65,7 @@ export function DonutChart({
           </svg>
           {(centerLabel || centerSublabel) && (
             <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-              {centerLabel && <span className="text-2xl font-bold tracking-tight text-foreground">{centerLabel}</span>}
+              {centerLabel && <span className="text-2xl font-bold tracking-tight tabular-nums text-foreground">{centerLabel}</span>}
               {centerSublabel && <span className="text-[11px] font-medium text-muted-foreground">{centerSublabel}</span>}
             </div>
           )}
@@ -70,7 +79,7 @@ export function DonutChart({
                   <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: d.color }} />
                   {d.label}
                 </span>
-                <span className="font-semibold text-foreground">{Math.round((d.value / total) * 100)}%</span>
+                <span className="font-semibold tabular-nums text-foreground">{Math.round((d.value / total) * 100)}%</span>
               </li>
             ))}
           </ul>

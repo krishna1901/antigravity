@@ -15,6 +15,7 @@ import {
   HelpCircle,
   Gift,
   ArrowRight,
+  PowerOff,
 } from "lucide-react";
 import { PageHeader } from "@/components/ui/page-header";
 import { SectionHeader } from "@/components/ui/section-header";
@@ -22,6 +23,8 @@ import { StatCard } from "@/components/ui/stat-card";
 import { ChartCard } from "@/components/ui/chart-card";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { Switch } from "@/components/ui/switch";
+import { Segmented } from "@/components/ui/segmented";
+import { EmptyState } from "@/components/ui/empty-state";
 import { Button } from "@/components/ui/button";
 import { DataTable, type Column } from "@/components/ui/data-table";
 import { automations, automationLogs } from "@/lib/demo-data";
@@ -99,7 +102,12 @@ const logColumns: Column<LogRow>[] = [
   {
     key: "automation",
     header: "Automation",
-    render: (row) => <span className="font-medium text-foreground">{row.automation}</span>,
+    render: (row) => (
+      <span className="inline-flex items-center gap-2 font-medium text-foreground">
+        <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-brand-500" />
+        {row.automation}
+      </span>
+    ),
   },
   {
     key: "event",
@@ -109,13 +117,13 @@ const logColumns: Column<LogRow>[] = [
   {
     key: "status",
     header: "Status",
-    render: (row) => <StatusBadge status={row.status} />,
+    render: (row) => <StatusBadge status={row.status} withDot />,
   },
   {
     key: "time",
     header: "When",
     align: "right",
-    render: (row) => <span className="text-xs text-muted-foreground">{row.time}</span>,
+    render: (row) => <span className="text-xs tabular-nums text-muted-foreground">{row.time}</span>,
   },
 ];
 
@@ -131,7 +139,22 @@ export default function AutomationsPage() {
     setToggles((prev) => ({ ...prev, [id]: { ...prev[id], [key]: value } }));
 
   const activeCount = Object.values(toggles).filter((t) => t.active).length;
+  const inactiveCount = automations.length - activeCount;
   const totalRuns = automations.reduce((sum, a) => sum + a.runs, 0);
+
+  // Status filter — driven by live toggle state so it stays in sync.
+  const [filter, setFilter] = useState<"all" | "active" | "inactive">("all");
+  const filterOptions = [
+    { value: "all", label: `All (${automations.length})` },
+    { value: "active", label: `Active (${activeCount})` },
+    { value: "inactive", label: `Inactive (${inactiveCount})` },
+  ];
+
+  const visibleAutomations = automations.filter((a) => {
+    if (filter === "active") return toggles[a.id]?.active;
+    if (filter === "inactive") return !toggles[a.id]?.active;
+    return true;
+  });
 
   return (
     <div className="space-y-8">
@@ -148,14 +171,19 @@ export default function AutomationsPage() {
       />
 
       {/* Safety banner */}
-      <div className="flex items-start gap-4 rounded-2xl border border-emerald-200 bg-gradient-to-br from-emerald-50 to-brand-50/40 p-5">
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 text-white shadow-sm">
+      <div className="flex items-start gap-4 rounded-2xl border border-emerald-200 bg-gradient-to-br from-emerald-50 to-brand-50/40 p-5 shadow-soft">
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 text-white shadow-sm ring-1 ring-white/15">
           <Shield className="h-5 w-5" />
         </div>
-        <div className="space-y-1">
-          <h2 className="text-sm font-semibold text-foreground">
-            Built to be safe, never spammy
-          </h2>
+        <div className="space-y-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <h2 className="text-sm font-semibold text-foreground">
+              Built to be safe, never spammy
+            </h2>
+            <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-white/70 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-emerald-700">
+              <Shield className="h-3 w-3" /> Platform-compliant
+            </span>
+          </div>
           <p className="max-w-3xl text-sm leading-relaxed text-muted-foreground">
             Every automation is{" "}
             <span className="font-medium text-foreground">approval-based and rate-limited</span> —
@@ -208,15 +236,39 @@ export default function AutomationsPage() {
           title="Your automations"
           description="Toggle activation and approval requirements per workflow"
           icon={<Zap className="h-4 w-4" />}
+          action={
+            <Segmented
+              options={filterOptions}
+              value={filter}
+              onValueChange={(v) => setFilter(v as "all" | "active" | "inactive")}
+              size="sm"
+            />
+          }
         />
-        <div className="grid gap-4 lg:grid-cols-2">
-          {automations.map((a) => {
+        {visibleAutomations.length === 0 ? (
+          <EmptyState
+            icon={<PowerOff className="h-6 w-6" />}
+            title={filter === "active" ? "No active automations" : "No inactive automations"}
+            description={
+              filter === "active"
+                ? "Nothing is running right now. Flip on an automation below, or start from a safety-vetted template to put one to work."
+                : "Every automation is currently active and working. Switch back to all to review the full list."
+            }
+            action={
+              <Button variant="outline" size="sm" onClick={() => setFilter("all")}>
+                View all automations
+              </Button>
+            }
+          />
+        ) : (
+        <div className="grid items-stretch gap-4 lg:grid-cols-2">
+          {visibleAutomations.map((a) => {
             const meta = typeMeta[a.type as AutomationType];
             const state = toggles[a.id];
             return (
               <div
                 key={a.id}
-                className="flex flex-col gap-4 rounded-2xl border border-border bg-card p-5 shadow-sm transition-all hover:shadow-md"
+                className="flex h-full flex-col gap-4 rounded-2xl border border-border bg-card p-5 shadow-soft transition-all duration-300 hover:-translate-y-0.5 hover:shadow-elevated hover:ring-1 hover:ring-brand-200/70"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-start gap-3">
@@ -273,6 +325,7 @@ export default function AutomationsPage() {
             );
           })}
         </div>
+        )}
       </section>
 
       {/* Automation templates */}
@@ -282,14 +335,14 @@ export default function AutomationsPage() {
           description="Pre-built, safety-vetted workflows you can enable in one click"
           icon={<Plus className="h-4 w-4" />}
         />
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="grid items-stretch gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {templates.map((t) => (
             <div
               key={t.id}
-              className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
+              className="group flex h-full flex-col gap-3 rounded-2xl border border-border bg-card p-5 shadow-soft transition-all duration-300 hover:-translate-y-0.5 hover:shadow-elevated hover:ring-1 hover:ring-brand-200/70"
             >
               <div
-                className={`flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br text-white shadow-sm ${t.accent}`}
+                className={`flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br text-white shadow-sm ring-1 ring-white/15 transition-transform duration-300 group-hover:scale-105 ${t.accent}`}
               >
                 {t.icon}
               </div>
@@ -312,11 +365,28 @@ export default function AutomationsPage() {
           description="The latest automation runs and approval events"
           icon={<Clock4 className="h-4 w-4" />}
         />
-        <ChartCard title="Automation logs" subtitle="Most recent events" bodyClassName="p-0">
+        <ChartCard
+          title="Automation logs"
+          subtitle="Most recent events"
+          bodyClassName="p-0"
+          action={
+            <Button variant="ghost" size="xs" className="text-muted-foreground">
+              View full history <ArrowRight className="h-3.5 w-3.5" />
+            </Button>
+          }
+          footer={
+            <span>
+              {automationLogs.length} recent events ·{" "}
+              {automationLogs.filter((l) => l.status === "success").length} succeeded ·{" "}
+              {automationLogs.filter((l) => l.status === "pending").length} awaiting approval
+            </span>
+          }
+        >
           <DataTable
             columns={logColumns}
             data={automationLogs}
             getRowKey={(row) => row.id}
+            empty="No automation activity yet."
           />
         </ChartCard>
       </section>

@@ -13,7 +13,7 @@ interface ChartCardProps {
 /** Card shell for charts & rich widgets — consistent header / body / footer. */
 export function ChartCard({ title, subtitle, action, children, footer, className, bodyClassName }: ChartCardProps) {
   return (
-    <section className={cn("flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-sm", className)}>
+    <section className={cn("flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-soft", className)}>
       <header className="flex items-center justify-between gap-3 border-b border-border px-5 py-4">
         <div>
           <h2 className="text-sm font-semibold tracking-tight text-foreground">{title}</h2>

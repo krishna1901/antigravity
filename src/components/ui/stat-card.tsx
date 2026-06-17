@@ -28,14 +28,15 @@ export function StatCard({
   return (
     <div
       className={cn(
-        "group relative overflow-hidden rounded-2xl border border-border bg-card p-5 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md",
+        "group relative overflow-hidden rounded-2xl border border-border bg-card p-5 shadow-soft transition-all duration-300 hover:-translate-y-0.5 hover:shadow-elevated hover:ring-1 hover:ring-brand-200/70",
         className
       )}
     >
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
       <div className="flex items-start justify-between">
         <p className="text-sm font-medium text-muted-foreground">{label}</p>
         {icon && (
-          <div className={cn("flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br text-white shadow-sm", accent)}>
+          <div className={cn("flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br text-white shadow-sm ring-1 ring-white/15 transition-transform duration-300 group-hover:scale-105", accent)}>
             {icon}
           </div>
         )}
@@ -43,7 +44,7 @@ export function StatCard({
 
       <div className="mt-3 flex items-end justify-between gap-2">
         <div className="flex items-baseline gap-2">
-          <span className="text-2xl font-bold tracking-tight text-foreground">{value}</span>
+          <span className="text-2xl font-bold tracking-tight tabular-nums text-foreground">{value}</span>
           {delta && (
             <span
               className={cn(

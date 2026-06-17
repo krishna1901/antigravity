@@ -31,7 +31,7 @@ function WorkspaceSwitcher() {
       {open && (
         <>
           <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
-          <div className="absolute left-3 right-3 top-full z-20 mt-1 overflow-hidden rounded-xl border border-white/10 bg-[#1a2030] p-1 shadow-2xl">
+          <div className="absolute left-3 right-3 top-full z-20 mt-1 overflow-hidden rounded-xl border border-white/10 bg-sidebar-accent p-1 shadow-2xl">
             {workspaces.map((w) => (
               <button
                 key={w.id}
@@ -78,7 +78,7 @@ function UserWidget() {
       {open && (
         <>
           <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
-          <div className="absolute bottom-full left-0 right-0 z-20 mb-1 overflow-hidden rounded-xl border border-white/10 bg-[#1a2030] p-1 shadow-2xl">
+          <div className="absolute bottom-full left-0 right-0 z-20 mb-1 overflow-hidden rounded-xl border border-white/10 bg-sidebar-accent p-1 shadow-2xl">
             <Link href="/settings" onClick={() => setOpen(false)} className="flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm text-white/80 hover:bg-white/10">
               <User className="h-4 w-4" /> Profile
             </Link>
@@ -99,10 +99,12 @@ export function Sidebar({ className, onNavigate }: { className?: string; onNavig
   const pathname = usePathname();
 
   return (
-    <aside className={cn("flex h-full w-64 shrink-0 flex-col bg-sidebar text-sidebar-foreground", className)}>
+    <aside className={cn("relative flex h-full w-64 shrink-0 flex-col bg-sidebar text-sidebar-foreground", className)}>
+      {/* Ambient radial glow */}
+      <div className="pointer-events-none absolute -left-10 -top-10 h-48 w-56 rounded-full bg-brand-500/20 blur-[80px]" />
       {/* Brand */}
-      <div className="flex items-center gap-2.5 px-5 py-5">
-        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-brand-500 to-coral-500 shadow-lg shadow-brand-500/30">
+      <div className="relative flex items-center gap-2.5 px-5 py-5">
+        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-brand-500 to-coral-500 shadow-lg shadow-brand-500/40 ring-1 ring-white/20">
           <Sparkles className="h-5 w-5 text-white" />
         </div>
         <div className="leading-tight">
@@ -128,11 +130,15 @@ export function Sidebar({ className, onNavigate }: { className?: string; onNavig
                   href={item.href}
                   onClick={onNavigate}
                   className={cn(
-                    "group relative flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium transition-colors",
-                    active ? "bg-white/10 text-white" : "text-white/60 hover:bg-white/5 hover:text-white"
+                    "group relative flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium transition-all duration-200",
+                    active
+                      ? "bg-gradient-to-r from-brand-500/25 to-coral-500/10 text-white shadow-sm shadow-brand-500/10 ring-1 ring-inset ring-white/10"
+                      : "text-white/60 hover:bg-white/5 hover:text-white"
                   )}
                 >
-                  {active && <span className="absolute left-0 top-1/2 h-5 w-1 -translate-y-1/2 rounded-r-full bg-brand-400" />}
+                  {active && (
+                    <span className="absolute left-0 top-1/2 h-5 w-1 -translate-y-1/2 rounded-r-full bg-gradient-to-b from-brand-400 to-coral-500 shadow-[0_0_12px] shadow-brand-500/50" />
+                  )}
                   <item.icon className={cn("h-[18px] w-[18px]", active ? "text-brand-400" : "text-white/50 group-hover:text-white/80")} />
                   <span className="flex-1">{item.title}</span>
                   {item.badge && (
@@ -147,11 +153,12 @@ export function Sidebar({ className, onNavigate }: { className?: string; onNavig
 
       {/* Upgrade card */}
       <div className="px-3 pb-3">
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-brand-500 to-coral-600 p-4 shadow-lg">
-          <div className="absolute -right-6 -top-6 h-20 w-20 rounded-full bg-white/15 blur-xl" />
-          <p className="text-sm font-bold text-white">Upgrade to Agency</p>
-          <p className="mt-0.5 text-[11px] leading-relaxed text-white/80">Unlimited workspaces, AI credits &amp; team seats.</p>
-          <button className="mt-3 w-full rounded-lg bg-white/95 py-1.5 text-xs font-bold text-brand-700 transition-colors hover:bg-white">
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-brand-500 to-coral-600 p-4 shadow-lg shadow-brand-500/25 ring-1 ring-white/15">
+          <div className="absolute -right-6 -top-6 h-20 w-20 rounded-full bg-white/20 blur-xl" />
+          <div className="absolute inset-x-0 top-0 h-px bg-white/30" />
+          <p className="relative text-sm font-bold text-white">Upgrade to Agency</p>
+          <p className="relative mt-0.5 text-[11px] leading-relaxed text-white/85">Unlimited workspaces, AI credits &amp; team seats.</p>
+          <button className="relative mt-3 w-full rounded-lg bg-white py-1.5 text-xs font-bold text-brand-700 shadow-sm transition-all hover:-translate-y-px hover:shadow-md">
             View plans
           </button>
         </div>

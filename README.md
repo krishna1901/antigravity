@@ -58,8 +58,26 @@ switch on auth + live data.
   the data layer with `revalidatePath`.
 - **Storage** (`src/lib/storage.ts`) — validated uploads to the right bucket.
 - **Scheduler** (`src/lib/publishing/*`) — `scheduled_posts` → `publishing_jobs`
-  → `publishing_logs`, with per-platform **placeholder** formatters/publishers.
-  No real publishing happens yet.
+  → `publishing_logs`, with per-platform formatters/publishers.
+- **Publishing job runner** (`src/lib/publishing/runner.ts`) — drains due
+  `publishing_jobs`, claims each atomically, dispatches to the platform
+  publisher, and advances status with retry + backoff and log reconciliation.
+  Triggered by `POST /api/cron/publish` (cron) or the in-app "process now"
+  action. Real per-platform publishing arrives in Phase 3C+; until then the
+  runner records a **simulated** success so the lifecycle is observable.
+
+## Publishing runner (Phase 3B)
+- **Trigger** — `GET|POST /api/cron/publish`. A `vercel.json` cron calls it every
+  5 minutes. Set `CRON_SECRET` and the endpoint requires
+  `Authorization: Bearer <secret>` (Vercel Cron sends it automatically).
+- **Service role** — the cron runner uses `SUPABASE_SERVICE_ROLE_KEY` (no user
+  session, bypasses RLS) via `src/lib/supabase/admin.ts`. Without it the runner
+  is a safe no-op (`mode: "demo"`).
+- **Simulation** — placeholder publishers report `not_implemented`; with
+  `PUBLISH_SIMULATE` unset/true the runner marks those jobs *posted (simulated)*.
+  Set `PUBLISH_SIMULATE=false` to fail honestly until a real publisher exists.
+- **Retry** — transient failures retry up to 3× with 1m/5m/15m backoff before a
+  terminal failure; parent `scheduled_posts` + `posts` roll up when all jobs end.
 - **AI content generation** (`src/lib/ai/*`) — provider-based, **server-only**
   generation for the 10 Content Studio tools. Dependency-free REST calls to
   OpenAI (`/v1/chat/completions`) and Anthropic (`/v1/messages`). Every run is
@@ -92,7 +110,8 @@ in demo mode.
 - Real OAuth connect flows + encrypted token storage (`connected_accounts`,
   `social_tokens`, `platform_permissions`).
 - Real publishing per platform (`src/lib/publishing/platforms/*` — currently
-  placeholders) + a cron/queue **job runner** that drains `publishing_jobs`.
+  placeholders; the runner + simulation already exist) — Phase 3C (LinkedIn),
+  3D (Meta), 3G (YouTube/TikTok/X).
 - Analytics sync + comment/DM sync into `analytics_snapshots` / `comments_inbox`.
 - Finish wiring the remaining list pages from demo fallback to live reads
   (the data layer + actions are ready; dashboard counts are already live).

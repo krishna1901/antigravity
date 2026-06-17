@@ -48,24 +48,29 @@ export async function ensureUserBootstrapped(
     user.email?.split("@")[0] ??
     "My";
 
-  // New workspaces start on the free Starter plan; Pro/Agency require a real
-  // Stripe subscription (the webhook promotes the plan after checkout).
-  const { data: ws, error: wsError } = await supabase
+  // Generate the id app-side and insert WITHOUT a RETURNING select: the creator
+  // is not a member yet, so the `workspaces_select_member` RLS policy would
+  // filter the returned row and abort bootstrap. The INSERT itself passes its
+  // `with_check (owner_id = auth.uid())`. New workspaces start on the free
+  // Starter plan; Pro/Agency require a real Stripe subscription (webhook-driven).
+  const workspaceId = crypto.randomUUID();
+  const { error: wsError } = await supabase
     .from("workspaces")
-    .insert({ name: `${baseName}'s Workspace`, owner_id: user.id, plan: "starter" })
-    .select("id")
-    .single();
-  if (wsError || !ws) return null;
+    .insert({ id: workspaceId, name: `${baseName}'s Workspace`, owner_id: user.id, plan: "starter" });
+  if (wsError) return null;
 
-  await supabase
+  // Owner membership must be created before settings (settings RLS requires
+  // workspace membership).
+  const { error: memberError } = await supabase
     .from("workspace_members")
-    .insert({ workspace_id: ws.id, user_id: user.id, role: "owner" });
+    .insert({ workspace_id: workspaceId, user_id: user.id, role: "owner" });
+  if (memberError) return null;
 
   await supabase
     .from("settings")
-    .insert({ workspace_id: ws.id, brand_name: `${baseName}'s Workspace`, timezone: "UTC" });
+    .insert({ workspace_id: workspaceId, brand_name: `${baseName}'s Workspace`, timezone: "UTC" });
 
-  return ws.id;
+  return workspaceId;
 }
 
 /** Workspaces the current user belongs to. */

@@ -87,21 +87,27 @@ switch on auth + live data.
   OpenAI (`/v1/chat/completions`) and Anthropic (`/v1/messages`). Every run is
   persisted to `ai_generations` (provider, model, status, input/output JSON).
 - **Social OAuth** (`src/lib/integrations/*`, `src/app/api/oauth/*`) — real
-  OAuth 2.0 connect flows. **LinkedIn** is fully wired (3C): sign-in + publish
-  as the member via the Posts API. Tokens are **encrypted at rest**
+  OAuth 2.0 connect flows. **LinkedIn** (3C): sign-in + publish as the member via
+  the Posts API. **Meta** (3D): Facebook Login → Page tokens + linked Instagram
+  Business account; publish to a Facebook Page feed and to Instagram (media
+  container + publish). Tokens are **encrypted at rest**
   (`src/lib/security/crypto.ts`, AES-256-GCM) in `social_tokens` and read only
   server-side by the publishing runner.
 
-## Social connections (Phase 3C — LinkedIn)
-- **Connect** — Integrations → LinkedIn → "Connect LinkedIn" starts
-  `/api/oauth/linkedin/start` → LinkedIn consent → `/api/oauth/linkedin/callback`
-  stores an encrypted token + a `connected_accounts` row.
-- **Config** — set `LINKEDIN_CLIENT_ID`, `LINKEDIN_CLIENT_SECRET`, and
-  `TOKEN_ENCRYPTION_KEY`. Register the redirect URI
-  `<NEXT_PUBLIC_APP_URL>/api/oauth/linkedin/callback` in your LinkedIn app.
-  Without these, LinkedIn shows as "available" and the runner simulates posts.
-- **Publish** — once connected, the job runner posts real LinkedIn updates; not-
-  yet-implemented platforms (Meta/YouTube/TikTok/X) still simulate.
+## Social connections (Phase 3C–3D)
+- **LinkedIn** — "Connect LinkedIn" → `/api/oauth/linkedin/start` → consent →
+  `/api/oauth/linkedin/callback` stores an encrypted token. Set
+  `LINKEDIN_CLIENT_ID`, `LINKEDIN_CLIENT_SECRET`, `TOKEN_ENCRYPTION_KEY` and
+  register redirect `<NEXT_PUBLIC_APP_URL>/api/oauth/linkedin/callback`.
+- **Meta (Facebook + Instagram)** — "Connect" → `/api/oauth/meta/start` →
+  Facebook Login → `/api/oauth/meta/callback` picks the first managed Page,
+  stores an encrypted Page token (Facebook) and, when a linked IG Business
+  account exists, an Instagram connection too. Set `META_APP_ID`,
+  `META_APP_SECRET`, `TOKEN_ENCRYPTION_KEY` and register redirect
+  `<NEXT_PUBLIC_APP_URL>/api/oauth/meta/callback`. Instagram publishing needs a
+  linked image asset with a public URL.
+- **Publish** — once connected, the job runner posts real LinkedIn / Facebook /
+  Instagram updates; not-yet-implemented platforms (YouTube/TikTok/X) simulate.
 
 ## AI setup (Content Studio)
 The Content Studio works in two modes:

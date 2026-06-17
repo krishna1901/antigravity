@@ -52,7 +52,7 @@ export function TrendCard({ trend, className }: { trend: TrendCardData; classNam
         <Button size="sm" variant="outline" className="flex-1">
           <Lightbulb className="h-3.5 w-3.5" /> Save as idea
         </Button>
-        <Button size="sm" className="flex-1 bg-gradient-to-r from-brand-500 to-coral-500 text-white">
+        <Button size="sm" variant="gradient" className="flex-1">
           <PenSquare className="h-3.5 w-3.5" /> Generate post
         </Button>
         <Button size="icon-sm" variant="ghost" aria-label="More actions">

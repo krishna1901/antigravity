@@ -15,6 +15,7 @@ import {
   Check,
 } from "lucide-react";
 import { CommandBar } from "@/components/ui/command-bar";
+import { Button } from "@/components/ui/button";
 import { notifications } from "@/lib/demo-data";
 import { cn } from "@/lib/utils";
 
@@ -39,7 +40,7 @@ export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
   const unread = notifications.filter((n) => n.unread).length;
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 shrink-0 items-center justify-between gap-3 border-b border-border bg-card/80 px-4 backdrop-blur-md lg:px-6">
+    <header className="sticky top-0 z-30 flex h-16 shrink-0 items-center justify-between gap-3 border-b border-border/70 bg-card/70 px-4 backdrop-blur-xl lg:px-6">
       <div className="flex items-center gap-2">
         <button
           type="button"
@@ -55,22 +56,22 @@ export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
       <div className="flex items-center gap-2">
         {/* Quick create */}
         <div className="relative">
-          <button
-            type="button"
+          <Button
+            variant="gradient"
             onClick={() => {
               setCreateOpen((o) => !o);
               setNotifOpen(false);
             }}
-            className="inline-flex h-9 items-center gap-1.5 rounded-full bg-gradient-to-r from-brand-500 to-coral-500 pl-3 pr-2.5 text-sm font-semibold text-white shadow-sm shadow-brand-500/20 transition-opacity hover:opacity-95"
+            className="h-9 rounded-full px-3 font-semibold"
           >
             <Plus className="h-4 w-4" />
             <span className="hidden sm:inline">Create</span>
             <ChevronDown className="h-3.5 w-3.5 opacity-80" />
-          </button>
+          </Button>
           {createOpen && (
             <>
               <div className="fixed inset-0 z-10" onClick={() => setCreateOpen(false)} />
-              <div className="absolute right-0 z-20 mt-2 w-64 overflow-hidden rounded-2xl border border-border bg-card p-1.5 shadow-xl">
+              <div className="absolute right-0 z-20 mt-2 w-64 overflow-hidden rounded-2xl border border-border bg-card p-1.5 shadow-elevated animate-in fade-in zoom-in-95 duration-150">
                 {createOptions.map((o) => (
                   <button
                     key={o.href}
@@ -115,7 +116,7 @@ export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
           {notifOpen && (
             <>
               <div className="fixed inset-0 z-10" onClick={() => setNotifOpen(false)} />
-              <div className="absolute right-0 z-20 mt-2 w-80 overflow-hidden rounded-2xl border border-border bg-card shadow-xl">
+              <div className="absolute right-0 z-20 mt-2 w-80 overflow-hidden rounded-2xl border border-border bg-card shadow-elevated animate-in fade-in zoom-in-95 duration-150">
                 <div className="flex items-center justify-between border-b border-border px-4 py-3">
                   <p className="text-sm font-semibold text-foreground">Notifications</p>
                   <button className="text-xs font-medium text-brand-600 hover:underline">Mark all read</button>

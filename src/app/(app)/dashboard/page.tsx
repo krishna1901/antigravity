@@ -59,13 +59,13 @@ export default function DashboardPage() {
     <div className="space-y-6">
       {/* Hero */}
       <section className="relative overflow-hidden rounded-3xl bg-sidebar p-6 text-white sm:p-8">
-        <div className="absolute -right-10 -top-16 h-56 w-56 rounded-full bg-brand-500/30 blur-3xl" />
+        <div className="absolute -right-10 -top-16 h-56 w-56 rounded-full bg-brand-500/40 blur-3xl" />
         <div className="absolute -bottom-20 right-1/3 h-56 w-56 rounded-full bg-coral-500/20 blur-3xl" />
         <div className="bg-grid absolute inset-0 opacity-40" />
         <div className="relative flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <p className="text-sm font-medium text-white/50">{today}</p>
-            <h1 className="mt-1 text-2xl font-bold tracking-tight sm:text-3xl">
+            <h1 className="mt-1 text-3xl font-extrabold tracking-tight sm:text-4xl">
               Welcome back, {currentUser.name.split(" ")[0]} 👋
             </h1>
             <p className="mt-2 max-w-lg text-sm text-white/70">
@@ -92,9 +92,9 @@ export default function DashboardPage() {
               { label: "Posts live", value: "7", trend: "+3" },
               { label: "Eng. rate", value: "6.8%", trend: "+0.9%" },
             ].map((s) => (
-              <div key={s.label} className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-sm">
+              <div key={s.label} className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-sm transition-transform duration-300 hover:-translate-y-0.5">
                 <p className="text-[11px] font-medium text-white/50">{s.label}</p>
-                <p className="mt-1 text-xl font-bold">{s.value}</p>
+                <p className="mt-1 text-xl font-bold tabular-nums">{s.value}</p>
                 <p className="mt-0.5 inline-flex items-center gap-0.5 text-[11px] font-semibold text-emerald-300">
                   <ArrowUpRight className="h-3 w-3" /> {s.trend}
                 </p>

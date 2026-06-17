@@ -103,6 +103,36 @@ export async function listMedia(): Promise<MappedMedia[]> {
   return (data as MediaRowWithPost[]).map(toMappedMedia);
 }
 
+export interface StorageUsage {
+  bytes: number;
+  /** Human-readable total (e.g. "1.2 GB"). */
+  label: string;
+}
+
+/**
+ * Total live storage used by non-archived assets in the workspace. Demo/preview
+ * returns a representative figure.
+ */
+export async function getStorageUsage(): Promise<StorageUsage> {
+  const ctx = await getDbContext();
+  if (!isLive(ctx)) {
+    const demoBytes = Math.round(1.2 * 1024 ** 3);
+    return { bytes: demoBytes, label: formatSize(demoBytes) };
+  }
+
+  const { data } = await ctx.supabase
+    .from("media_assets")
+    .select("size_bytes")
+    .eq("workspace_id", ctx.workspaceId)
+    .eq("archived", false);
+
+  const bytes = ((data as { size_bytes: number | null }[] | null) ?? []).reduce(
+    (sum, r) => sum + (r.size_bytes ?? 0),
+    0
+  );
+  return { bytes, label: formatSize(bytes) };
+}
+
 /** Create a media asset scoped to the active workspace. Returns the new row. */
 export async function createMediaAsset(input: MediaInput): Promise<MediaAssetRow> {
   const ctx = await requireLiveContext();

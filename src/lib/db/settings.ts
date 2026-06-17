@@ -16,6 +16,14 @@ function mapSettings(row: SettingsRow): MappedSettings {
     aiProvider: row.ai_provider ?? settingsDefaults.aiProvider,
     webhookUrl: row.webhook_url ?? settingsDefaults.webhookUrl,
     timezone: row.timezone ?? settingsDefaults.timezone,
+    postingPrefs: {
+      ...settingsDefaults.postingPrefs,
+      ...((row.posting_prefs as Partial<MappedSettings["postingPrefs"]> | null) ?? {}),
+    },
+    notificationPrefs: {
+      ...settingsDefaults.notificationPrefs,
+      ...((row.notification_prefs as Record<string, boolean> | null) ?? {}),
+    },
   };
 }
 
@@ -43,6 +51,8 @@ export interface UpdateSettingsInput {
   aiProvider?: string | null;
   webhookUrl?: string | null;
   timezone?: string | null;
+  postingPrefs?: MappedSettings["postingPrefs"];
+  notificationPrefs?: Record<string, boolean>;
 }
 
 /** Upserts the workspace's single settings row (keyed by workspace_id). */
@@ -60,6 +70,9 @@ export async function updateSettings(
   if (input.aiProvider !== undefined) patch.ai_provider = input.aiProvider;
   if (input.webhookUrl !== undefined) patch.webhook_url = input.webhookUrl;
   if (input.timezone !== undefined) patch.timezone = input.timezone;
+  if (input.postingPrefs !== undefined) patch.posting_prefs = input.postingPrefs;
+  if (input.notificationPrefs !== undefined)
+    patch.notification_prefs = input.notificationPrefs;
 
   const { data, error } = await ctx.supabase
     .from("settings")

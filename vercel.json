@@ -6,7 +6,7 @@
       "schedule": "0 0 * * *"
     },
     {
-      "path": "/api/cron/analytics",
+      "path": "/api/cron/maintenance",
       "schedule": "0 1 * * *"
     }
   ]

@@ -3,6 +3,7 @@ import { requireLiveContext } from "@/lib/db/context";
 import type { Platform } from "@/lib/demo-data";
 import type { ScheduledPostRow, PublishingJobRow } from "@/lib/db/types";
 import { createJob, logJobEvent } from "@/lib/publishing/jobs";
+import { nextQueueSlot, defaultPostingPrefs, type PostingPrefs } from "@/lib/publishing/slots";
 
 /**
  * Phase 2 — scheduling orchestration.
@@ -32,16 +33,33 @@ export interface ScheduleResult {
   jobs: PublishingJobRow[];
 }
 
-/** Resolves the effective run timestamp (ISO string) for a scheduling mode. */
-function resolveRunAt(mode: ScheduleMode, scheduledAt?: string | null): string {
+/**
+ * Resolves the effective run timestamp (ISO string) for a scheduling mode.
+ * `next_queue` reads the workspace's posting preferences + timezone and computes
+ * the next open slot (see `@/lib/publishing/slots`).
+ */
+async function resolveRunAt(
+  ctx: Awaited<ReturnType<typeof requireLiveContext>>,
+  mode: ScheduleMode,
+  scheduledAt?: string | null
+): Promise<string> {
   const now = new Date();
   switch (mode) {
     case "now":
       return now.toISOString();
-    case "next_queue":
-      // TODO(phase3): compute the real "next available queue slot" from the
-      // workspace posting schedule (settings.posting_prefs). Placeholder: +1 day.
-      return new Date(now.getTime() + 24 * 60 * 60 * 1000).toISOString();
+    case "next_queue": {
+      const { data } = await ctx.supabase
+        .from("settings")
+        .select("posting_prefs, timezone")
+        .eq("workspace_id", ctx.workspaceId)
+        .maybeSingle();
+      const prefs: PostingPrefs = {
+        ...defaultPostingPrefs,
+        ...((data?.posting_prefs as Partial<PostingPrefs> | null) ?? {}),
+      };
+      const timezone = (data?.timezone as string | null) ?? "UTC";
+      return nextQueueSlot(prefs, timezone, now);
+    }
     case "custom":
       return scheduledAt ?? now.toISOString();
     default:
@@ -74,7 +92,7 @@ export async function schedulePost(
   options: ScheduleOptions
 ): Promise<ScheduleResult> {
   const ctx = await requireLiveContext();
-  const runAt = resolveRunAt(options.mode, options.scheduledAt);
+  const runAt = await resolveRunAt(ctx, options.mode, options.scheduledAt);
 
   // 1. Scheduling-intent row.
   const { data: scheduled, error: scheduleError } = await ctx.supabase

@@ -67,9 +67,13 @@ switch on auth + live data.
   runner records a **simulated** success so the lifecycle is observable.
 
 ## Publishing runner (Phase 3B)
-- **Trigger** — `GET|POST /api/cron/publish`. A `vercel.json` cron calls it every
-  5 minutes. Set `CRON_SECRET` and the endpoint requires
-  `Authorization: Bearer <secret>` (Vercel Cron sends it automatically).
+- **Trigger** — `GET|POST /api/cron/publish`. The `vercel.json` cron calls it
+  **daily** (`0 0 * * *`) — Vercel **Hobby** plans only allow once-per-day crons.
+  For a tighter cadence, upgrade to **Pro** (e.g. `*/5 * * * *`) or point an
+  external scheduler (cron-job.org, GitHub Actions, Supabase `pg_cron`) at the
+  endpoint. Set `CRON_SECRET` and the endpoint requires
+  `Authorization: Bearer <secret>` (Vercel Cron sends it automatically). The
+  in-app "process now" action drains the current workspace on demand regardless.
 - **Service role** — the cron runner uses `SUPABASE_SERVICE_ROLE_KEY` (no user
   session, bypasses RLS) via `src/lib/supabase/admin.ts`. Without it the runner
   is a safe no-op (`mode: "demo"`).

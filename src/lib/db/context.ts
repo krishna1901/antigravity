@@ -2,7 +2,7 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
-import { getActiveWorkspaceId } from "@/lib/db/workspaces";
+import { getActiveWorkspaceId, ensureUserBootstrapped } from "@/lib/db/workspaces";
 
 export interface DbContext {
   /** Real Supabase env present. */
@@ -33,7 +33,13 @@ export async function getDbContext(): Promise<DbContext> {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { configured: true, supabase, userId: null, workspaceId: null };
-  const workspaceId = await getActiveWorkspaceId(supabase, user.id);
+  // Resolve the active workspace; if the user has none yet (e.g. signed up via
+  // the email-confirm flow, which skips bootstrap), create it now. Idempotent —
+  // self-heals any authenticated user who is missing a workspace.
+  let workspaceId = await getActiveWorkspaceId(supabase, user.id);
+  if (!workspaceId) {
+    workspaceId = await ensureUserBootstrapped(supabase, user);
+  }
   return { configured: true, supabase, userId: user.id, workspaceId };
 }
 

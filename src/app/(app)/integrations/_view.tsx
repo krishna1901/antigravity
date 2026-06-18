@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   RefreshCw,
   Sparkles,
@@ -23,6 +23,7 @@ import { PlatformIcon } from "@/components/ui/platform-icon";
 import { Segmented } from "@/components/ui/segmented";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Button, buttonVariants } from "@/components/ui/button";
+import { useToast } from "@/components/ui/toast";
 import { cn } from "@/lib/utils";
 import { integrations, type Platform } from "@/lib/demo-data";
 import type { MappedConnectedAccount } from "@/lib/db/settings";
@@ -128,6 +129,7 @@ function IntegrationCard({
   onDisconnect: (platform: string) => void;
   disconnecting: boolean;
 }) {
+  const toast = useToast();
   const oauth = oauthStartFor(item.id, configuredProviders);
   // Connectable in demo (showcase) or when the provider's OAuth is configured.
   const connectable = !live || Boolean(oauth?.configured);
@@ -174,7 +176,18 @@ function IntegrationCard({
               <XIcon className="h-3.5 w-3.5" /> Disconnect
             </Button>
           ) : (
-            <Button variant="outline" size="sm" className="w-full">
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full"
+              onClick={() =>
+                toast({
+                  variant: "info",
+                  title: `${item.name} is connected`,
+                  description: "Detailed management controls for this provider are coming soon.",
+                })
+              }
+            >
               Manage
             </Button>
           )
@@ -200,7 +213,17 @@ function IntegrationCard({
             Coming soon
           </Button>
         ) : (
-          <Button size="sm" className={`w-full bg-gradient-to-r text-white hover:opacity-90 ${item.accent}`}>
+          <Button
+            size="sm"
+            className={`w-full bg-gradient-to-r text-white hover:opacity-90 ${item.accent}`}
+            onClick={() =>
+              toast({
+                variant: "info",
+                title: "Preview mode",
+                description: `Sign in to connect ${item.name} to your workspace.`,
+              })
+            }
+          >
             <Plug className="h-3.5 w-3.5" /> Connect
           </Button>
         )}
@@ -218,6 +241,8 @@ export function IntegrationsView({
   liveAccounts: MappedConnectedAccount[];
   configuredProviders: string[];
 }) {
+  const router = useRouter();
+  const toast = useToast();
   const [status, setStatus] = useState<StatusFilter>("all");
   const [dismissed, setDismissed] = useState(false);
   const [isDisconnecting, startDisconnect] = useTransition();
@@ -314,10 +339,30 @@ export function IntegrationsView({
             <span className="hidden items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700 sm:inline-flex">
               <CheckCircle2 className="h-3.5 w-3.5" /> {connected} live
             </span>
-            <Button variant="ghost" size="sm">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                router.refresh();
+                toast({
+                  variant: "success",
+                  title: "Status refreshed",
+                  description: "Re-checked your connected accounts.",
+                });
+              }}
+            >
               <RefreshCw className="h-4 w-4" /> Refresh status
             </Button>
-            <Button className="bg-gradient-to-r from-brand-500 to-coral-500 text-white shadow-sm shadow-brand-500/20 hover:opacity-95">
+            <Button
+              className="bg-gradient-to-r from-brand-500 to-coral-500 text-white shadow-sm shadow-brand-500/20 hover:opacity-95"
+              onClick={() =>
+                toast({
+                  variant: "info",
+                  title: "You're browsing the marketplace",
+                  description: "Every available integration is listed below — more are on the way.",
+                })
+              }
+            >
               <Plug className="h-4 w-4" /> Browse marketplace
             </Button>
           </>

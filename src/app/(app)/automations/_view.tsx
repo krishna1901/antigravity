@@ -28,6 +28,7 @@ import { Segmented } from "@/components/ui/segmented";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Button } from "@/components/ui/button";
 import { DataTable, type Column } from "@/components/ui/data-table";
+import { useToast } from "@/components/ui/toast";
 import { automationLogs } from "@/lib/demo-data";
 import {
   toggleAutomationActive,
@@ -150,6 +151,7 @@ export function AutomationsView({
   // Live accounts have no demo log feed yet → empty; demo shows the showcase.
   const logs = demo ? automationLogs : [];
   const router = useRouter();
+  const toast = useToast();
   const [, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
@@ -246,7 +248,16 @@ export function AutomationsView({
               <Play className={`h-4 w-4${runPending ? " animate-pulse" : ""}`} />
               {runPending ? "Running…" : "Run now"}
             </Button>
-            <Button className="bg-gradient-to-r from-brand-500 to-coral-500 text-white shadow-sm shadow-brand-500/20 hover:opacity-95">
+            <Button
+              className="bg-gradient-to-r from-brand-500 to-coral-500 text-white shadow-sm shadow-brand-500/20 hover:opacity-95"
+              onClick={() =>
+                toast({
+                  variant: "info",
+                  title: "Automation builder is coming soon",
+                  description: "Meanwhile, enable a safety-vetted template below to get started.",
+                })
+              }
+            >
               <Plus className="h-4 w-4" /> Create automation
             </Button>
           </>
@@ -438,7 +449,18 @@ export function AutomationsView({
                 <h3 className="text-sm font-semibold text-foreground">{t.name}</h3>
                 <p className="text-xs leading-relaxed text-muted-foreground">{t.desc}</p>
               </div>
-              <Button variant="outline" size="sm" className="mt-auto">
+              <Button
+                variant="outline"
+                size="sm"
+                className="mt-auto"
+                onClick={() =>
+                  toast({
+                    variant: "info",
+                    title: `“${t.name}” is on the way`,
+                    description: "One-click setup for this template is coming soon.",
+                  })
+                }
+              >
                 Use template <ArrowRight className="h-3.5 w-3.5" />
               </Button>
             </div>
@@ -458,7 +480,18 @@ export function AutomationsView({
           subtitle="Most recent events"
           bodyClassName="p-0"
           action={
-            <Button variant="ghost" size="xs" className="text-muted-foreground">
+            <Button
+              variant="ghost"
+              size="xs"
+              className="text-muted-foreground"
+              onClick={() =>
+                toast({
+                  variant: "info",
+                  title: "Full history is coming soon",
+                  description: "The most recent automation events are shown below.",
+                })
+              }
+            >
               View full history <ArrowRight className="h-3.5 w-3.5" />
             </Button>
           }

@@ -25,7 +25,7 @@ export async function publish(
   formatted: FormattedPost,
   ctx: PublishContext
 ): Promise<PublishResult> {
-  if (!isLinkedInConfigured()) {
+  if (!(await isLinkedInConfigured())) {
     return { ok: false, status: "not_implemented", message: "LinkedIn app credentials not configured" };
   }
 

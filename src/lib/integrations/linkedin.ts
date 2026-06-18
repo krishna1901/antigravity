@@ -1,4 +1,5 @@
 import "server-only";
+import { getPlatformSecret } from "@/lib/platform/secrets";
 
 /**
  * LinkedIn integration client — dependency-free server-side `fetch`.
@@ -21,8 +22,12 @@ const LINKEDIN_VERSION = "202401";
 /** Scopes for signing in + posting as the member. */
 export const LINKEDIN_SCOPES = ["openid", "profile", "email", "w_member_social"];
 
-export function isLinkedInConfigured(): boolean {
-  return Boolean(process.env.LINKEDIN_CLIENT_ID && process.env.LINKEDIN_CLIENT_SECRET);
+export async function isLinkedInConfigured(): Promise<boolean> {
+  const [id, secret] = await Promise.all([
+    getPlatformSecret("LINKEDIN_CLIENT_ID"),
+    getPlatformSecret("LINKEDIN_CLIENT_SECRET"),
+  ]);
+  return Boolean(id && secret);
 }
 
 /** Redirect URI for the OAuth callback (derived from the app URL). */
@@ -32,10 +37,10 @@ export function linkedinRedirectUri(): string {
 }
 
 /** Build the LinkedIn authorization URL for the consent screen. */
-export function buildAuthUrl(state: string): string {
+export async function buildAuthUrl(state: string): Promise<string> {
   const params = new URLSearchParams({
     response_type: "code",
-    client_id: process.env.LINKEDIN_CLIENT_ID as string,
+    client_id: (await getPlatformSecret("LINKEDIN_CLIENT_ID")) as string,
     redirect_uri: linkedinRedirectUri(),
     state,
     scope: LINKEDIN_SCOPES.join(" "),
@@ -59,8 +64,8 @@ export async function exchangeCode(code: string): Promise<LinkedInToken> {
       grant_type: "authorization_code",
       code,
       redirect_uri: linkedinRedirectUri(),
-      client_id: process.env.LINKEDIN_CLIENT_ID as string,
-      client_secret: process.env.LINKEDIN_CLIENT_SECRET as string,
+      client_id: (await getPlatformSecret("LINKEDIN_CLIENT_ID")) as string,
+      client_secret: (await getPlatformSecret("LINKEDIN_CLIENT_SECRET")) as string,
     }),
   });
   if (!res.ok) {

@@ -10,7 +10,7 @@ import { ContentStudioView } from "./_view";
 export default async function ContentStudioPage() {
   const [recent, aiConfigured] = await Promise.all([
     listRecentGenerations(),
-    Promise.resolve(isAIConfigured()),
+    isAIConfigured(),
   ]);
 
   return <ContentStudioView recent={recent} aiConfigured={aiConfigured} />;

@@ -15,10 +15,15 @@ export default async function IntegrationsPage() {
   const ctx = await getDbContext();
   const [accounts] = await Promise.all([listConnectedAccounts()]);
 
+  const [linkedInConfigured, metaConfigured, scaffoldProviders] = await Promise.all([
+    isLinkedInConfigured(),
+    isMetaConfigured(),
+    configuredScaffoldProviders(),
+  ]);
   const configuredProviders: string[] = [
-    ...(isLinkedInConfigured() ? ["linkedin"] : []),
-    ...(isMetaConfigured() ? ["facebook", "instagram"] : []),
-    ...configuredScaffoldProviders(),
+    ...(linkedInConfigured ? ["linkedin"] : []),
+    ...(metaConfigured ? ["facebook", "instagram"] : []),
+    ...scaffoldProviders,
   ];
 
   return (

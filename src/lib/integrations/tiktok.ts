@@ -11,7 +11,7 @@ import { isProviderConfigured } from "@/lib/integrations/scaffold";
 const INIT_URL = "https://open.tiktokapis.com/v2/post/publish/video/init/";
 const TITLE_LIMIT = 2200;
 
-export function isTikTokConfigured(): boolean {
+export async function isTikTokConfigured(): Promise<boolean> {
   return isProviderConfigured("tiktok");
 }
 

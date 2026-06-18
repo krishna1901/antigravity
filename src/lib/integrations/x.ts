@@ -8,7 +8,7 @@ import { isProviderConfigured } from "@/lib/integrations/scaffold";
 
 const TWEETS_URL = "https://api.x.com/2/tweets";
 
-export function isXConfigured(): boolean {
+export async function isXConfigured(): Promise<boolean> {
   return isProviderConfigured("x");
 }
 

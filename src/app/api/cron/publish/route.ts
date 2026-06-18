@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { runAllDueJobs } from "@/lib/publishing/runner";
+import { getPlatformSecret } from "@/lib/platform/secrets";
 
 /**
  * Publishing job runner endpoint (Phase 3B).
@@ -15,8 +16,8 @@ import { runAllDueJobs } from "@/lib/publishing/runner";
  */
 export const dynamic = "force-dynamic";
 
-function isAuthorized(request: NextRequest): boolean {
-  const secret = process.env.CRON_SECRET;
+async function isAuthorized(request: NextRequest): Promise<boolean> {
+  const secret = await getPlatformSecret("CRON_SECRET");
   // No secret configured → only meaningful in demo (runner is a no-op anyway).
   if (!secret) return true;
 
@@ -28,7 +29,7 @@ function isAuthorized(request: NextRequest): boolean {
 }
 
 async function handle(request: NextRequest) {
-  if (!isAuthorized(request)) {
+  if (!(await isAuthorized(request))) {
     return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
   }
   try {

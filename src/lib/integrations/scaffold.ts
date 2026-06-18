@@ -1,5 +1,6 @@
 import "server-only";
 import { createHash } from "crypto";
+import { getPlatformSecret } from "@/lib/platform/secrets";
 
 /**
  * Phase 3G — OAuth scaffolding for additional platforms (YouTube, TikTok, X).
@@ -83,21 +84,24 @@ export function getProvider(id: ScaffoldId): ScaffoldProvider {
   return REGISTRY[id];
 }
 
-function clientId(p: ScaffoldProvider): string | undefined {
-  return process.env[p.clientIdEnv];
+function clientId(p: ScaffoldProvider): Promise<string | undefined> {
+  return getPlatformSecret(p.clientIdEnv);
 }
-function clientSecret(p: ScaffoldProvider): string | undefined {
-  return process.env[p.clientSecretEnv];
+function clientSecret(p: ScaffoldProvider): Promise<string | undefined> {
+  return getPlatformSecret(p.clientSecretEnv);
 }
 
-export function isProviderConfigured(id: ScaffoldId): boolean {
+export async function isProviderConfigured(id: ScaffoldId): Promise<boolean> {
   const p = REGISTRY[id];
-  return Boolean(clientId(p) && clientSecret(p));
+  const [cid, csecret] = await Promise.all([clientId(p), clientSecret(p)]);
+  return Boolean(cid && csecret);
 }
 
 /** Which scaffolded providers are configured (for the integrations UI). */
-export function configuredScaffoldProviders(): ScaffoldId[] {
-  return (Object.keys(REGISTRY) as ScaffoldId[]).filter(isProviderConfigured);
+export async function configuredScaffoldProviders(): Promise<ScaffoldId[]> {
+  const ids = Object.keys(REGISTRY) as ScaffoldId[];
+  const flags = await Promise.all(ids.map(isProviderConfigured));
+  return ids.filter((_, i) => flags[i]);
 }
 
 export function redirectUri(id: ScaffoldId): string {
@@ -115,11 +119,11 @@ export function pkceChallenge(verifier: string): string {
 }
 
 /** Build the authorize URL. Pass a PKCE challenge for providers that need it. */
-export function buildAuthUrl(id: ScaffoldId, state: string, challenge?: string): string {
+export async function buildAuthUrl(id: ScaffoldId, state: string, challenge?: string): Promise<string> {
   const p = REGISTRY[id];
   const params = new URLSearchParams({
     response_type: "code",
-    [p.clientIdParam]: clientId(p) as string,
+    [p.clientIdParam]: (await clientId(p)) as string,
     redirect_uri: redirectUri(id),
     scope: p.scopes,
     state,
@@ -152,15 +156,16 @@ export async function exchangeCode(
   });
   if (p.pkce && verifier) body.set("code_verifier", verifier);
 
+  const [cid, csecret] = await Promise.all([clientId(p), clientSecret(p)]);
   const headers: Record<string, string> = { "content-type": "application/x-www-form-urlencoded" };
   if (p.tokenAuth === "basic") {
-    const creds = Buffer.from(`${clientId(p)}:${clientSecret(p)}`).toString("base64");
+    const creds = Buffer.from(`${cid}:${csecret}`).toString("base64");
     headers.authorization = `Basic ${creds}`;
     // X also wants client_id present in the body for confidential clients.
-    body.set("client_id", clientId(p) as string);
+    body.set("client_id", cid as string);
   } else {
-    body.set(p.clientIdParam, clientId(p) as string);
-    body.set("client_secret", clientSecret(p) as string);
+    body.set(p.clientIdParam, cid as string);
+    body.set("client_secret", csecret as string);
   }
 
   const res = await fetch(p.tokenUrl, { method: "POST", headers, body });
@@ -191,14 +196,15 @@ export async function refreshAccessToken(
   const p = REGISTRY[id];
   const body = new URLSearchParams({ grant_type: "refresh_token", refresh_token: refreshToken });
 
+  const [cid, csecret] = await Promise.all([clientId(p), clientSecret(p)]);
   const headers: Record<string, string> = { "content-type": "application/x-www-form-urlencoded" };
   if (p.tokenAuth === "basic") {
-    const creds = Buffer.from(`${clientId(p)}:${clientSecret(p)}`).toString("base64");
+    const creds = Buffer.from(`${cid}:${csecret}`).toString("base64");
     headers.authorization = `Basic ${creds}`;
-    body.set("client_id", clientId(p) as string);
+    body.set("client_id", cid as string);
   } else {
-    body.set(p.clientIdParam, clientId(p) as string);
-    body.set("client_secret", clientSecret(p) as string);
+    body.set(p.clientIdParam, cid as string);
+    body.set("client_secret", csecret as string);
   }
 
   const res = await fetch(p.tokenUrl, { method: "POST", headers, body });

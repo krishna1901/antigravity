@@ -40,7 +40,7 @@ export default async function BillingPage({
   const usage = await getWorkspaceUsage();
   const { checkout } = await searchParams;
 
-  const stripeConfigured = isStripeConfigured();
+  const stripeConfigured = await isStripeConfigured();
   let hasCustomer = false;
   if (usage.live) {
     const ctx = await getDbContext();

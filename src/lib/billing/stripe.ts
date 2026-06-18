@@ -1,5 +1,6 @@
 import "server-only";
 import Stripe from "stripe";
+import { getPlatformSecret } from "@/lib/platform/secrets";
 
 /**
  * Phase 5 — Stripe client + capability guards.
@@ -12,13 +13,17 @@ import Stripe from "stripe";
 let cached: Stripe | null = null;
 
 /** True when a Stripe secret key is present (checkout / portal can run). */
-export function isStripeConfigured(): boolean {
-  return Boolean(process.env.STRIPE_SECRET_KEY);
+export async function isStripeConfigured(): Promise<boolean> {
+  return Boolean(await getPlatformSecret("STRIPE_SECRET_KEY"));
 }
 
 /** True when both the secret key and the webhook signing secret are present. */
-export function isStripeWebhookConfigured(): boolean {
-  return Boolean(process.env.STRIPE_SECRET_KEY && process.env.STRIPE_WEBHOOK_SECRET);
+export async function isStripeWebhookConfigured(): Promise<boolean> {
+  const [secret, webhook] = await Promise.all([
+    getPlatformSecret("STRIPE_SECRET_KEY"),
+    getPlatformSecret("STRIPE_WEBHOOK_SECRET"),
+  ]);
+  return Boolean(secret && webhook);
 }
 
 /**
@@ -26,9 +31,10 @@ export function isStripeWebhookConfigured(): boolean {
  * `apiVersion` so the SDK uses the version its TypeScript types were generated
  * against, keeping runtime and types in lockstep.
  */
-export function getStripe(): Stripe | null {
-  if (!isStripeConfigured()) return null;
-  if (!cached) cached = new Stripe(process.env.STRIPE_SECRET_KEY!);
+export async function getStripe(): Promise<Stripe | null> {
+  const secretKey = await getPlatformSecret("STRIPE_SECRET_KEY");
+  if (!secretKey) return null;
+  if (!cached) cached = new Stripe(secretKey);
   return cached;
 }
 

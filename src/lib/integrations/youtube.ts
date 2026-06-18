@@ -12,7 +12,7 @@ const RESUMABLE_URL =
 const TITLE_LIMIT = 100;
 const DESCRIPTION_LIMIT = 5000;
 
-export function isYouTubeConfigured(): boolean {
+export async function isYouTubeConfigured(): Promise<boolean> {
   return isProviderConfigured("youtube");
 }
 

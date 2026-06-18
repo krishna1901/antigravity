@@ -35,7 +35,7 @@ export async function publish(
   formatted: FormattedPost,
   ctx: PublishContext
 ): Promise<PublishResult> {
-  if (!isYouTubeConfigured()) {
+  if (!(await isYouTubeConfigured())) {
     return { ok: false, status: "not_implemented", message: "YouTube app credentials not configured" };
   }
 

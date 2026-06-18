@@ -33,7 +33,7 @@ export async function GET(
   if (!isLive(ctx)) {
     return NextResponse.redirect(`${appUrl()}/login?redirectedFrom=/integrations`);
   }
-  if (!isProviderConfigured(provider)) {
+  if (!(await isProviderConfigured(provider))) {
     return NextResponse.redirect(`${appUrl()}/integrations?error=${provider}_not_configured`);
   }
   if (!isEncryptionConfigured()) {
@@ -45,7 +45,7 @@ export async function GET(
   const verifier = usesPkce ? randomBytes(32).toString("hex") : null;
   const challenge = verifier ? pkceChallenge(verifier) : undefined;
 
-  const res = NextResponse.redirect(buildAuthUrl(provider, state, challenge));
+  const res = NextResponse.redirect(await buildAuthUrl(provider, state, challenge));
   const cookieOpts = {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",

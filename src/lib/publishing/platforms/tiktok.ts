@@ -25,7 +25,7 @@ export async function publish(
   formatted: FormattedPost,
   ctx: PublishContext
 ): Promise<PublishResult> {
-  if (!isTikTokConfigured()) {
+  if (!(await isTikTokConfigured())) {
     return { ok: false, status: "not_implemented", message: "TikTok app credentials not configured" };
   }
 

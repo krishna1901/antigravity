@@ -1,10 +1,11 @@
 import "server-only";
+import { getPlatformSecret } from "@/lib/platform/secrets";
 
 /**
  * OpenAI Chat Completions provider — dependency-free server-side `fetch`.
  *
- * Keys are read from `process.env` on the server ONLY and never reach the
- * client bundle (`import "server-only"` enforces this at build time).
+ * The key comes from the admin-managed platform store (env fallback), read on
+ * the server ONLY — it never reaches the client bundle (`import "server-only"`).
  */
 
 /** Thrown on a non-2xx response so the caller can record a failed generation. */
@@ -41,7 +42,7 @@ export async function callOpenAI({
   model,
   maxTokens = 1024,
 }: OpenAICallParams): Promise<{ text: string; model: string }> {
-  const apiKey = process.env.OPENAI_API_KEY;
+  const apiKey = await getPlatformSecret("OPENAI_API_KEY");
   if (!apiKey) throw new AIError("OPENAI_API_KEY is not set.", "openai");
 
   const res = await fetch(OPENAI_ENDPOINT, {

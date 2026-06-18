@@ -10,6 +10,8 @@ import { logAdminAction } from "@/lib/admin/audit";
 import { encryptSecret, decryptSecret, isEncryptionConfigured } from "@/lib/security/crypto";
 import { PLAN_ORDER, type PlanId } from "@/lib/billing/plans";
 import { IMP_ADMIN_COOKIE, IMP_ACTIVE_COOKIE } from "@/lib/admin/impersonation";
+import { setPlatformSecret, clearPlatformSecret } from "@/lib/platform/secrets";
+import { isKnownSecretKey, isSecretKey } from "@/lib/platform/catalog";
 
 interface AdminActionResult {
   ok: boolean;
@@ -152,4 +154,30 @@ export async function stopImpersonationAction(): Promise<void> {
   jar.delete(IMP_ADMIN_COOKIE);
   jar.delete(IMP_ACTIVE_COOKIE);
   redirect("/admin/users");
+}
+
+export async function setPlatformSecretAction(key: string, value: string): Promise<AdminActionResult> {
+  const admin = await requireSuperAdmin();
+  if (!isKnownSecretKey(key)) return { ok: false, error: "Unknown key." };
+  const v = value.trim();
+  if (!v) return { ok: false, error: "Value is required." };
+
+  const r = await setPlatformSecret(key, v, { isSecret: isSecretKey(key), updatedBy: admin.userId });
+  if (!r.ok) return r;
+
+  await logAdminAction({ actorId: admin.userId, actorEmail: admin.email, action: "set_platform_secret", targetType: "secret", targetId: key });
+  revalidatePath("/admin/secrets");
+  return { ok: true };
+}
+
+export async function clearPlatformSecretAction(key: string): Promise<AdminActionResult> {
+  const admin = await requireSuperAdmin();
+  if (!isKnownSecretKey(key)) return { ok: false, error: "Unknown key." };
+
+  const r = await clearPlatformSecret(key);
+  if (!r.ok) return r;
+
+  await logAdminAction({ actorId: admin.userId, actorEmail: admin.email, action: "clear_platform_secret", targetType: "secret", targetId: key });
+  revalidatePath("/admin/secrets");
+  return { ok: true };
 }

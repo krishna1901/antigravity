@@ -19,7 +19,7 @@ export async function GET(_request: NextRequest) {
   if (!isLive(ctx)) {
     return NextResponse.redirect(`${appUrl()}/login?redirectedFrom=/integrations`);
   }
-  if (!isMetaConfigured()) {
+  if (!(await isMetaConfigured())) {
     return NextResponse.redirect(`${appUrl()}/integrations?error=meta_not_configured`);
   }
   if (!isEncryptionConfigured()) {
@@ -27,7 +27,7 @@ export async function GET(_request: NextRequest) {
   }
 
   const state = randomBytes(16).toString("hex");
-  const res = NextResponse.redirect(buildAuthUrl(state));
+  const res = NextResponse.redirect(await buildAuthUrl(state));
   res.cookies.set("meta_oauth_state", state, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",

@@ -22,7 +22,7 @@ export async function GET(_request: NextRequest) {
   if (!isLive(ctx)) {
     return NextResponse.redirect(`${appUrl()}/login?redirectedFrom=/integrations`);
   }
-  if (!isLinkedInConfigured()) {
+  if (!(await isLinkedInConfigured())) {
     return NextResponse.redirect(`${appUrl()}/integrations?error=linkedin_not_configured`);
   }
   if (!isEncryptionConfigured()) {
@@ -30,7 +30,7 @@ export async function GET(_request: NextRequest) {
   }
 
   const state = randomBytes(16).toString("hex");
-  const res = NextResponse.redirect(buildAuthUrl(state));
+  const res = NextResponse.redirect(await buildAuthUrl(state));
   res.cookies.set("li_oauth_state", state, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",

@@ -27,7 +27,7 @@ export async function publish(
   formatted: FormattedPost,
   ctx: PublishContext
 ): Promise<PublishResult> {
-  if (!isXConfigured()) {
+  if (!(await isXConfigured())) {
     return { ok: false, status: "not_implemented", message: "X app credentials not configured" };
   }
 

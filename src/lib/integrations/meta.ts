@@ -1,4 +1,5 @@
 import "server-only";
+import { getPlatformSecret } from "@/lib/platform/secrets";
 
 /**
  * Meta (Facebook + Instagram) integration client — dependency-free `fetch`.
@@ -27,8 +28,12 @@ export const META_SCOPES = [
   "business_management",
 ];
 
-export function isMetaConfigured(): boolean {
-  return Boolean(process.env.META_APP_ID && process.env.META_APP_SECRET);
+export async function isMetaConfigured(): Promise<boolean> {
+  const [id, secret] = await Promise.all([
+    getPlatformSecret("META_APP_ID"),
+    getPlatformSecret("META_APP_SECRET"),
+  ]);
+  return Boolean(id && secret);
 }
 
 export function metaRedirectUri(): string {
@@ -36,9 +41,9 @@ export function metaRedirectUri(): string {
   return `${base.replace(/\/$/, "")}/api/oauth/meta/callback`;
 }
 
-export function buildAuthUrl(state: string): string {
+export async function buildAuthUrl(state: string): Promise<string> {
   const params = new URLSearchParams({
-    client_id: process.env.META_APP_ID as string,
+    client_id: (await getPlatformSecret("META_APP_ID")) as string,
     redirect_uri: metaRedirectUri(),
     state,
     scope: META_SCOPES.join(","),
@@ -50,8 +55,8 @@ export function buildAuthUrl(state: string): string {
 /** Exchange a code for a (short-lived) user access token. */
 export async function exchangeCode(code: string): Promise<{ accessToken: string; expiresIn: number }> {
   const params = new URLSearchParams({
-    client_id: process.env.META_APP_ID as string,
-    client_secret: process.env.META_APP_SECRET as string,
+    client_id: (await getPlatformSecret("META_APP_ID")) as string,
+    client_secret: (await getPlatformSecret("META_APP_SECRET")) as string,
     redirect_uri: metaRedirectUri(),
     code,
   });
@@ -65,8 +70,8 @@ export async function exchangeCode(code: string): Promise<{ accessToken: string;
 export async function exchangeForLongLived(userToken: string): Promise<{ accessToken: string; expiresIn: number }> {
   const params = new URLSearchParams({
     grant_type: "fb_exchange_token",
-    client_id: process.env.META_APP_ID as string,
-    client_secret: process.env.META_APP_SECRET as string,
+    client_id: (await getPlatformSecret("META_APP_ID")) as string,
+    client_secret: (await getPlatformSecret("META_APP_SECRET")) as string,
     fb_exchange_token: userToken,
   });
   const res = await fetch(`${GRAPH}/oauth/access_token?${params.toString()}`);

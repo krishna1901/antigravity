@@ -42,7 +42,7 @@ export async function publish(
   formatted: FormattedPost,
   ctx: PublishContext
 ): Promise<PublishResult> {
-  if (!isMetaConfigured()) {
+  if (!(await isMetaConfigured())) {
     return { ok: false, status: "not_implemented", message: "Meta app credentials not configured" };
   }
 

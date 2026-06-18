@@ -519,9 +519,9 @@ export function SettingsView({ settings, connectedAccounts }: SettingsViewProps)
                     onChange={(e) => setDefaultTone(e.target.value)}
                   />
                 </Field>
-                <Field label="AI provider" hint="Custom providers require an API key (configured later).">
+                <Field label="AI provider" hint="AI is managed by the platform — no API key needed.">
                   <SelectField
-                    options={["OpenAI (GPT)", "Claude", "Custom"]}
+                    options={["OpenAI (GPT)", "Claude"]}
                     value={aiProvider}
                     onChange={(e) => setAiProvider(e.target.value)}
                   />

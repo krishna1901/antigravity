@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import type Stripe from "stripe";
 import { getStripe, isStripeWebhookConfigured } from "@/lib/billing/stripe";
 import { priceIdToPlan } from "@/lib/billing/stripe-plans";
+import { getPlatformSecret } from "@/lib/platform/secrets";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { applySubscriptionState, findWorkspaceIdByCustomer } from "@/lib/db/billing";
 
@@ -26,10 +27,10 @@ function customerIdOf(value: string | { id: string } | null | undefined): string
 }
 
 export async function POST(request: NextRequest) {
-  if (!isStripeWebhookConfigured()) {
+  if (!(await isStripeWebhookConfigured())) {
     return NextResponse.json({ ok: true, skipped: "not_configured" });
   }
-  const stripe = getStripe();
+  const stripe = await getStripe();
   if (!stripe) return NextResponse.json({ ok: true, skipped: "not_configured" });
 
   // RAW body is required for signature verification — never request.json().
@@ -37,9 +38,10 @@ export async function POST(request: NextRequest) {
   const sig = request.headers.get("stripe-signature");
   if (!sig) return new NextResponse("Missing signature", { status: 400 });
 
+  const webhookSecret = (await getPlatformSecret("STRIPE_WEBHOOK_SECRET"))!;
   let event: Stripe.Event;
   try {
-    event = stripe.webhooks.constructEvent(body, sig, process.env.STRIPE_WEBHOOK_SECRET!);
+    event = stripe.webhooks.constructEvent(body, sig, webhookSecret);
   } catch (err) {
     const message = err instanceof Error ? err.message : "Invalid signature";
     return new NextResponse(`Webhook signature verification failed: ${message}`, { status: 400 });
@@ -74,7 +76,7 @@ export async function POST(request: NextRequest) {
         if (!workspaceId || !subId) break;
 
         const sub = await stripe.subscriptions.retrieve(subId);
-        const plan = priceIdToPlan(sub.items.data[0]?.price?.id);
+        const plan = await priceIdToPlan(sub.items.data[0]?.price?.id);
         await applySubscriptionState(admin, {
           workspaceId,
           plan: plan ?? undefined,
@@ -93,7 +95,7 @@ export async function POST(request: NextRequest) {
         if (!workspaceId) break;
 
         // Unknown price → refresh status but don't guess a plan (plan omitted).
-        const plan = priceIdToPlan(sub.items.data[0]?.price?.id);
+        const plan = await priceIdToPlan(sub.items.data[0]?.price?.id);
         await applySubscriptionState(admin, {
           workspaceId,
           plan: plan ?? undefined,

@@ -16,18 +16,18 @@ type BillingActionResult = { ok: true; url: string } | { ok: false; error: strin
  * to redirect to. Safe no-op (clear error) in demo mode / when signed out.
  */
 export async function startCheckoutAction(targetPlan: PlanId): Promise<BillingActionResult> {
-  if (!isStripeConfigured()) return { ok: false, error: "Billing is not configured." };
+  if (!(await isStripeConfigured())) return { ok: false, error: "Billing is not configured." };
   if (targetPlan === "starter") {
     return { ok: false, error: "Starter is free — downgrade from the billing portal." };
   }
-  if (!isStripePlanConfigured(targetPlan)) {
+  if (!(await isStripePlanConfigured(targetPlan))) {
     return { ok: false, error: "That plan is not available for checkout yet." };
   }
 
   const ctx = await getDbContext();
   if (!isLive(ctx)) return { ok: false, error: "Please sign in to manage billing." };
 
-  const stripe = getStripe();
+  const stripe = await getStripe();
   if (!stripe) return { ok: false, error: "Billing is not configured." };
 
   try {
@@ -46,7 +46,7 @@ export async function startCheckoutAction(targetPlan: PlanId): Promise<BillingAc
       await setWorkspaceCustomerId(ctx.supabase, ctx.workspaceId, customerId);
     }
 
-    const price = planToPriceId(targetPlan)!;
+    const price = (await planToPriceId(targetPlan))!;
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
       customer: customerId,
@@ -71,12 +71,12 @@ export async function startCheckoutAction(targetPlan: PlanId): Promise<BillingAc
  * webhook. Returns the portal URL for the client to redirect to.
  */
 export async function openBillingPortalAction(): Promise<BillingActionResult> {
-  if (!isStripeConfigured()) return { ok: false, error: "Billing is not configured." };
+  if (!(await isStripeConfigured())) return { ok: false, error: "Billing is not configured." };
 
   const ctx = await getDbContext();
   if (!isLive(ctx)) return { ok: false, error: "Please sign in to manage billing." };
 
-  const stripe = getStripe();
+  const stripe = await getStripe();
   if (!stripe) return { ok: false, error: "Billing is not configured." };
 
   try {

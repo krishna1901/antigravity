@@ -1,5 +1,6 @@
 import "server-only";
 import { AIError } from "./openai";
+import { getPlatformSecret } from "@/lib/platform/secrets";
 
 /**
  * Anthropic Messages API provider — dependency-free server-side `fetch`.
@@ -38,7 +39,7 @@ export async function callAnthropic({
   model,
   maxTokens = 1024,
 }: AnthropicCallParams): Promise<{ text: string; model: string }> {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
+  const apiKey = await getPlatformSecret("ANTHROPIC_API_KEY");
   if (!apiKey) throw new AIError("ANTHROPIC_API_KEY is not set.", "anthropic");
 
   const res = await fetch(ANTHROPIC_ENDPOINT, {

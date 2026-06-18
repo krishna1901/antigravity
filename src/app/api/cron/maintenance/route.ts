@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { syncAllWorkspaces as syncAllWorkspacesAnalytics } from "@/lib/analytics/sync";
 import { syncAllWorkspacesInbox } from "@/lib/inbox/sync";
 import { runAllWorkspacesAutomations } from "@/lib/automations/runner";
+import { getPlatformSecret } from "@/lib/platform/secrets";
 
 /**
  * Consolidated maintenance cron (Phase 7).
@@ -14,8 +15,8 @@ import { runAllWorkspacesAutomations } from "@/lib/automations/runner";
  */
 export const dynamic = "force-dynamic";
 
-function isAuthorized(request: NextRequest): boolean {
-  const secret = process.env.CRON_SECRET;
+async function isAuthorized(request: NextRequest): Promise<boolean> {
+  const secret = await getPlatformSecret("CRON_SECRET");
   if (!secret) return true;
   if (request.headers.get("authorization") === `Bearer ${secret}`) return true;
   if (request.headers.get("x-cron-secret") === secret) return true;
@@ -24,7 +25,7 @@ function isAuthorized(request: NextRequest): boolean {
 }
 
 async function handle(request: NextRequest) {
-  if (!isAuthorized(request)) {
+  if (!(await isAuthorized(request))) {
     return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
   }
   try {

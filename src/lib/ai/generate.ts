@@ -76,12 +76,12 @@ function demoResult(input: AIGenerateInput): AIGenerateResult {
  *   • provider error   → { ok:false, status:"failed", error }
  */
 export async function generateAI(input: AIGenerateInput): Promise<AIGenerateResult> {
-  if (!isAIConfigured()) return demoResult(input);
+  if (!(await isAIConfigured())) return demoResult(input);
 
-  const provider = resolveProvider();
+  const provider = await resolveProvider();
   if (!provider) return demoResult(input);
 
-  const model = defaultModelFor(provider);
+  const model = await defaultModelFor(provider);
   const { system, user } = buildPrompt(input);
 
   try {

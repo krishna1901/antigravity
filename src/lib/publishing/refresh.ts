@@ -31,7 +31,7 @@ export async function getFreshScaffoldToken(
   const expired = token.expiresAt
     ? new Date(token.expiresAt).getTime() <= Date.now() + EXPIRY_BUFFER_MS
     : false;
-  if (!expired || !token.refreshToken || !isProviderConfigured(providerId)) return token;
+  if (!expired || !token.refreshToken || !(await isProviderConfigured(providerId))) return token;
 
   try {
     const r = await refreshAccessToken(providerId, token.refreshToken);

@@ -765,5 +765,20 @@ create policy admin_audit_super_select on public.admin_audit_log
   for select using (public.is_super_admin());
 
 -- ============================================================================
+-- Phase D — platform-wide secret store (admin-managed API keys).
+-- RLS enabled with NO policies → only the service-role client may read/write;
+-- never exposed to anon/authenticated sessions. Secret values are encrypted by
+-- the app (src/lib/security/crypto.ts) before being stored here.
+-- ============================================================================
+create table if not exists public.platform_secrets (
+  key        text primary key,
+  value      text,
+  is_secret  boolean not null default true,
+  updated_by uuid references auth.users(id) on delete set null,
+  updated_at timestamptz not null default now()
+);
+alter table public.platform_secrets enable row level security;
+
+-- ============================================================================
 -- End of schema.
 -- ============================================================================

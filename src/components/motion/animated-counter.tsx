@@ -7,36 +7,46 @@ type AnimatedCounterProps = {
   value: number;
   /** Seconds the count-up takes. */
   duration?: number;
-  /** Decimal places to render. */
+  /** Decimal places to render. Defaults to the target value's own precision. */
   decimals?: number;
   prefix?: string;
   suffix?: string;
   className?: string;
 };
 
+/** Decimal places in a number's plain representation (capped at 4). */
+function precisionOf(n: number): number {
+  if (Number.isInteger(n)) return 0;
+  const s = String(n);
+  const i = s.indexOf(".");
+  return i === -1 ? 0 : Math.min(4, s.length - i - 1);
+}
+
 /**
- * Counts up to `value` on mount and whenever `value` changes. SSR-safe: renders
- * the final formatted value on the server and during reduced-motion so there is
- * no layout shift or hydration mismatch.
+ * Counts up from 0 to `value` on mount, and animates to the new value whenever
+ * `value` changes. SSR-safe: server and client both render the starting value
+ * (0, or the final value under reduced motion), so there's no hydration
+ * mismatch. Decimal precision defaults to the target value's own precision so
+ * integer stats stay integers and fractional stats keep their decimals.
  */
 export function AnimatedCounter({
   value,
   duration = 1.1,
-  decimals = 0,
+  decimals,
   prefix = "",
   suffix = "",
   className,
 }: AnimatedCounterProps) {
   const reduce = useReducedMotion();
-  const [display, setDisplay] = useState(value);
-  const from = useRef(value);
+  const [display, setDisplay] = useState(0);
+  const from = useRef(0);
 
   useEffect(() => {
-    // Reduced motion: render the final value directly (handled below), no
-    // animation or state churn.
-    if (reduce) return;
+    // Reduced motion → `duration: 0` snaps to the value with no visible motion.
+    // `display` is never branched on `reduce`, so server and client first paint
+    // both render 0 — no hydration mismatch.
     const controls = animate(from.current, value, {
-      duration,
+      duration: reduce ? 0 : duration,
       ease: [0.16, 1, 0.3, 1],
       onUpdate: (v) => setDisplay(v),
     });
@@ -44,10 +54,10 @@ export function AnimatedCounter({
     return () => controls.stop();
   }, [value, duration, reduce]);
 
-  const shown = reduce ? value : display;
-  const formatted = shown.toLocaleString(undefined, {
-    minimumFractionDigits: decimals,
-    maximumFractionDigits: decimals,
+  const dp = decimals ?? precisionOf(value);
+  const formatted = display.toLocaleString(undefined, {
+    minimumFractionDigits: dp,
+    maximumFractionDigits: dp,
   });
 
   return (

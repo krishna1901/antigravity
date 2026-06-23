@@ -16,8 +16,7 @@ export type SecretSection =
   | "social"
   | "payments"
   | "automation"
-  | "webhooks"
-  | "platform";
+  | "webhooks";
 
 export interface SecretGroup {
   group: string;

@@ -11,7 +11,7 @@ import { FadeIn } from "@/components/motion/fade-in";
 
 /**
  * Renders every catalog group for one admin section as premium secret-editor
- * cards. Reused by /admin/{ai,social,payments,automation,webhooks,platform}.
+ * cards. Reused by /admin/{ai,social,payments,automation,webhooks}.
  * Never exposes secret VALUES — `getSecretStatuses` returns booleans only.
  */
 export async function AdminConfigSection({

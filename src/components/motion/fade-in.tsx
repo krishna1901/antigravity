@@ -25,11 +25,14 @@ export function FadeIn({
   ...props
 }: FadeInProps) {
   const reduce = useReducedMotion();
+  // `initial` is identical on server and client (never branched on `reduce`,
+  // which is null on the server) to avoid a hydration mismatch; reduced motion
+  // is honored by snapping with `duration: 0`.
   return (
     <motion.div
-      initial={reduce ? false : { opacity: 0, y }}
+      initial={{ opacity: 0, y }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration, delay, ease: [0.16, 1, 0.3, 1] }}
+      transition={{ duration: reduce ? 0 : duration, delay: reduce ? 0 : delay, ease: [0.16, 1, 0.3, 1] }}
       className={cn(className)}
       {...props}
     >

@@ -14,12 +14,14 @@ type RevealProps = HTMLMotionProps<"div"> & {
  */
 export function Reveal({ delay = 0, y = 24, className, children, ...props }: RevealProps) {
   const reduce = useReducedMotion();
+  // Identical `initial` on server/client (not branched on `reduce`) to avoid a
+  // hydration mismatch; reduced motion snaps in with `duration: 0`.
   return (
     <motion.div
-      initial={reduce ? false : { opacity: 0, y }}
+      initial={{ opacity: 0, y }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-80px" }}
-      transition={{ duration: 0.55, delay, ease: [0.16, 1, 0.3, 1] }}
+      transition={{ duration: reduce ? 0 : 0.55, delay: reduce ? 0 : delay, ease: [0.16, 1, 0.3, 1] }}
       className={cn(className)}
       {...props}
     >

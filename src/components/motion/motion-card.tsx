@@ -25,13 +25,15 @@ export function MotionCard({
   ...props
 }: MotionCardProps) {
   const reduce = useReducedMotion();
+  // Hover/tap are client-only interactions (safe to branch on `reduce`); the
+  // entrance `initial` is not branched on `reduce` so server/client agree.
   const hover = interactive && !reduce ? { y: -4, transition: { duration: 0.2 } } : undefined;
   const tap = interactive && !reduce ? { scale: 0.985 } : undefined;
   return (
     <motion.div
-      initial={enter && !reduce ? { opacity: 0, y: 12 } : false}
+      initial={enter ? { opacity: 0, y: 12 } : false}
       animate={enter ? { opacity: 1, y: 0 } : undefined}
-      transition={{ duration: 0.4, delay, ease: [0.16, 1, 0.3, 1] }}
+      transition={{ duration: reduce ? 0 : 0.4, delay: reduce ? 0 : delay, ease: [0.16, 1, 0.3, 1] }}
       whileHover={hover}
       whileTap={tap}
       className={cn(className)}

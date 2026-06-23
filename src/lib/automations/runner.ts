@@ -121,23 +121,25 @@ export async function runWorkspaceAutomations(
 
       const reply = composeReply(automation, item);
       const autoSend = !automation.requires_approval;
+
+      // Auto-reply: actually post the reply to the platform (simulate-safe).
+      // On an honest send failure (PUBLISH_SIMULATE=false) leave the item
+      // completely untouched — not even a draft — so it stays eligible for the
+      // next run's `reply_draft IS NULL` scan and is retried once the
+      // integration is healthy again (it also remains replyable from the inbox).
+      let sent = false;
+      if (autoSend) {
+        const r = await sendPlatformReply(client, item, reply);
+        if (!r.ok) continue;
+        sent = true;
+      }
+
       const patch: Record<string, unknown> = {
         reply_draft: reply,
         suggested_reply: reply,
         updated_at: new Date().toISOString(),
       };
-
-      // Auto-reply: actually post the reply to the platform (simulate-safe).
-      // Only mark handled when the send succeeds (real or simulated); an honest
-      // failure (simulate off) leaves the item 'new' with a draft for review.
-      let sent = false;
-      if (autoSend) {
-        const r = await sendPlatformReply(client, item, reply);
-        if (r.ok) {
-          patch.status = "replied";
-          sent = true;
-        }
-      }
+      if (sent) patch.status = "replied";
 
       const { error } = await client
         .from("comments_inbox")

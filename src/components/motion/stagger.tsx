@@ -23,13 +23,20 @@ export function Stagger({
   ...props
 }: StaggerProps) {
   const reduce = useReducedMotion();
+  // `initial="hidden"` on both server and client (not branched on `reduce`) so
+  // there's no hydration mismatch; reduced motion zeroes the cascade timing.
   return (
     <motion.div
-      initial={reduce ? false : "hidden"}
+      initial="hidden"
       animate="show"
       variants={{
         hidden: {},
-        show: { transition: { staggerChildren: stagger, delayChildren: delay } },
+        show: {
+          transition: {
+            staggerChildren: reduce ? 0 : stagger,
+            delayChildren: reduce ? 0 : delay,
+          },
+        },
       }}
       className={cn(className)}
       {...props}
@@ -45,11 +52,12 @@ type StaggerItemProps = HTMLMotionProps<"div"> & {
 };
 
 export function StaggerItem({ y = 14, className, children, ...props }: StaggerItemProps) {
+  const reduce = useReducedMotion();
   return (
     <motion.div
       variants={{
         hidden: { opacity: 0, y },
-        show: { opacity: 1, y: 0, transition: { duration: 0.4, ease: [0.16, 1, 0.3, 1] } },
+        show: { opacity: 1, y: 0, transition: { duration: reduce ? 0 : 0.4, ease: [0.16, 1, 0.3, 1] } },
       }}
       className={cn(className)}
       {...props}

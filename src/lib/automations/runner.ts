@@ -2,6 +2,7 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getDbContext, isLive } from "@/lib/db/context";
+import { sendPlatformReply } from "@/lib/automations/reply";
 import type { AutomationRow, InboxRow } from "@/lib/db/types";
 
 /**
@@ -125,7 +126,18 @@ export async function runWorkspaceAutomations(
         suggested_reply: reply,
         updated_at: new Date().toISOString(),
       };
-      if (autoSend) patch.status = "replied";
+
+      // Auto-reply: actually post the reply to the platform (simulate-safe).
+      // Only mark handled when the send succeeds (real or simulated); an honest
+      // failure (simulate off) leaves the item 'new' with a draft for review.
+      let sent = false;
+      if (autoSend) {
+        const r = await sendPlatformReply(client, item, reply);
+        if (r.ok) {
+          patch.status = "replied";
+          sent = true;
+        }
+      }
 
       const { error } = await client
         .from("comments_inbox")
@@ -137,7 +149,7 @@ export async function runWorkspaceAutomations(
       claimed.add(item.id);
       matched++;
       actionedForThis++;
-      if (autoSend) autoHandled++;
+      if (sent) autoHandled++;
       else drafted++;
     }
 

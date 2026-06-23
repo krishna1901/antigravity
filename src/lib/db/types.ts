@@ -164,6 +164,8 @@ export interface InboxRow {
   related_post_id: string | null;
   suggested_reply: string | null;
   reply_draft: string | null;
+  /** Provider comment/DM id — used to post a reply back to the platform. */
+  external_id: string | null;
   received_at: string | null;
   created_at: string;
   updated_at: string;

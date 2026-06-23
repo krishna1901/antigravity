@@ -191,3 +191,28 @@ export async function publishToInstagram(
   const data = (await pubRes.json()) as { id: string };
   return { id: data.id, url: null };
 }
+
+/**
+ * Post a public reply to a Facebook or Instagram comment using the Page token.
+ * Facebook nests replies under `/{comment-id}/comments`; Instagram uses
+ * `/{ig-comment-id}/replies`. Returns the new reply's id.
+ *
+ * Powers comment-auto-reply automations. Requires the Page token (Facebook:
+ * `pages_manage_engagement`; Instagram: `instagram_manage_comments`).
+ */
+export async function replyToComment(
+  commentId: string,
+  pageToken: string,
+  message: string,
+  platform: "facebook" | "instagram"
+): Promise<{ id: string }> {
+  const edge = platform === "instagram" ? "replies" : "comments";
+  const res = await fetch(`${GRAPH}/${commentId}/${edge}`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ message, access_token: pageToken }),
+  });
+  if (!res.ok) throw new Error(`Meta comment reply failed (${res.status}): ${await res.text()}`);
+  const data = (await res.json()) as { id: string };
+  return { id: data.id };
+}

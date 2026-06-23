@@ -2,6 +2,7 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getDbContext, isLive } from "@/lib/db/context";
+import { sendPlatformReply } from "@/lib/automations/reply";
 import type { AutomationRow, InboxRow } from "@/lib/db/types";
 
 /**
@@ -122,12 +123,25 @@ export async function runWorkspaceAutomations(
 
       const reply = composeReply(automation, item);
       const autoSend = !automation.requires_approval;
+
+      // Auto-reply: actually post the reply to the platform (simulate-safe).
+      // On an honest send failure (PUBLISH_SIMULATE=false) leave the item
+      // completely untouched — not even a draft — so it stays eligible for the
+      // next run's `reply_draft IS NULL` scan and is retried once the
+      // integration is healthy again (it also remains replyable from the inbox).
+      let sent = false;
+      if (autoSend) {
+        const r = await sendPlatformReply(client, item, reply);
+        if (!r.ok) continue;
+        sent = true;
+      }
+
       const patch: Record<string, unknown> = {
         reply_draft: reply,
         suggested_reply: reply,
         updated_at: new Date().toISOString(),
       };
-      if (autoSend) patch.status = "replied";
+      if (sent) patch.status = "replied";
 
       const { error } = await client
         .from("comments_inbox")
@@ -139,7 +153,7 @@ export async function runWorkspaceAutomations(
       claimed.add(item.id);
       matched++;
       actionedForThis++;
-      if (autoSend) autoHandled++;
+      if (sent) autoHandled++;
       else drafted++;
     }
 
